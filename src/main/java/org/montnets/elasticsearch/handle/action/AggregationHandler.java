@@ -1,4 +1,4 @@
-package org.montnets.elasticsearch.action;
+package org.montnets.elasticsearch.handle.action;
 
 
 
@@ -25,14 +25,14 @@ import org.elasticsearch.search.aggregations.metrics.max.Max;
 import org.elasticsearch.search.aggregations.metrics.min.Min;
 import org.elasticsearch.search.aggregations.metrics.sum.Sum;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.montnets.elasticsearch.entity.EsRequestEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**   
 * Copyright: Copyright (c) 2018 Montnets
 * 
 * @ClassName: AggIndexAction.java
-* @Description: 该类的功能描述
-*	临时文件,优化程序·
+* @Description: 聚合处理
 * @version: v1.0.0
 * @author: chenhj
 * @date: 2018年6月12日 下午2:29:43 
@@ -41,44 +41,39 @@ import org.slf4j.LoggerFactory;
 * Date         Author          Version            Description
 *---------------------------------------------------------*
 * 2018年6月12日     chenhj          v1.0.0               修改原因
-* 2018年7月23日     chenhj          v1.1.0               删除多余代码,优化程序
 */
-public class AggIndexAction {
+public class AggregationHandler {
 	  private String index;
 	  private String type;	  
 	  private RestHighLevelClient rhlClient;
-	  private	QueryBuilder queryBuilder;
+	  private QueryBuilder queryBuilder;
 	  private Script script=null;
 	  private String count ="count";
 	  private  AggregationBuilder aggregationBuilder;
 	  private static final Logger LOG = LoggerFactory.getLogger(SearchAction.class);
-	  /**
-	   * 只有在执行一次查询之后才会有总数
-	   */
-	  private long totalCount;
-		public AggIndexAction(RestHighLevelClient rhlClient,String index,String type){
-		this.index=index;
-		this.type =type;
+	 public AggregationHandler(RestHighLevelClient rhlClient,EsRequestEntity<?> entity){
+		this.index=entity.getIndex();
+		this.type =entity.getType();
 		this.rhlClient=rhlClient;
 	}
 	 /**
 	  * 设置脚本
 	  */
-	 public AggIndexAction setScript(Script script) {
+	 public AggregationHandler setScript(Script script) {
 			this.script = script;
 			return this;
 	 }
 	 /**
 	  * 设置聚合
 	  */
-	 public AggIndexAction setAggregationBuilder(AggregationBuilder aggregationBuilder) {
+	 public AggregationHandler setAggregationBuilder(AggregationBuilder aggregationBuilder) {
 			this.aggregationBuilder = aggregationBuilder;
 			return this;
 	 }
 	 /**
 	  * 设置过滤条件
 	  */
-	 public AggIndexAction setQueryBuilder(QueryBuilder queryBuilder) {
+	 public AggregationHandler setQueryBuilder(QueryBuilder queryBuilder) {
 			this.queryBuilder = queryBuilder;
 			return this;
 	 }
@@ -133,7 +128,6 @@ public class AggIndexAction {
 			 aggHandle(aggregations);
 			 return listmap;
 		 } catch (Exception e) {
-			 e.printStackTrace();
 			throw e;
 		}
 	}
@@ -217,11 +211,5 @@ public class AggIndexAction {
 			map.put(key, value);
 		}
 		return map;
-	}
-	/**
-   * 获取当前请求的所有条数
-   */
-	public long getTotalCount() {
-		return totalCount;
 	}
 }

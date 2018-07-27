@@ -8,8 +8,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.http.HttpHost;
-import org.montnets.elasticsearch.enums.EsConnect;
-import org.montnets.elasticsearch.util.NetAddrUtil;
+import org.montnets.elasticsearch.common.enums.EsConnect;
+import org.montnets.elasticsearch.common.util.IpHandler;
 
 /**   
 * Copyright: Copyright (c) 2018 Montnets
@@ -145,7 +145,7 @@ public class EsConnectConfig implements Serializable{
 	   	 for(int i=0;i<nodes.length;i++){
 			 try {
 	    		 String url = nodes[i];
-	    		 NetAddrUtil addr = new  NetAddrUtil();  
+	    		 IpHandler addr = new  IpHandler();  
 	    	     addr.IpPortFromUrl(url);
 	        	 HttpHost httpHost = new HttpHost(addr.getIp(),addr.getPort(),scheme);
 	        	 ips[i]=httpHost;

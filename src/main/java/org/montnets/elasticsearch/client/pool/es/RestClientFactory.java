@@ -13,7 +13,7 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestClientBuilder.HttpClientConfigCallback;
 import org.elasticsearch.client.RestClientBuilder.RequestConfigCallback;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.montnets.elasticsearch.enums.EsConnect;
+import org.montnets.elasticsearch.common.enums.EsConnect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**  

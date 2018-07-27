@@ -1,4 +1,5 @@
-package org.montnets.elasticsearch.enums;
+package org.montnets.elasticsearch.common.enums;
+
 
 
 

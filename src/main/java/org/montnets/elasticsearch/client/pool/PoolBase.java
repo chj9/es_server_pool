@@ -2,12 +2,13 @@ package org.montnets.elasticsearch.client.pool;
 
 
 
+import java.io.Closeable;
+import java.io.Serializable;
+
 import org.apache.commons.pool2.PooledObjectFactory;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-
-import java.io.Closeable;
-import java.io.Serializable;
+import org.montnets.elasticsearch.common.exception.ConnectionException;
 
 /**
  * <p>Title: PoolBase</p>

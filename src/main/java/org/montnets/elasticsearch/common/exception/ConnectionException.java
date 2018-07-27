@@ -1,4 +1,4 @@
-package org.montnets.elasticsearch.client.pool;
+package org.montnets.elasticsearch.common.exception;
 
 
 

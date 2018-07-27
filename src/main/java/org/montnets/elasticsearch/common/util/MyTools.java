@@ -1,4 +1,4 @@
-package org.montnets.elasticsearch.util;
+package org.montnets.elasticsearch.common.util;
 
 
 import java.io.IOException;

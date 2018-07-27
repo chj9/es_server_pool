@@ -1,9 +1,5 @@
 package org.montnets.elasticsearch.config;
-
-
-
 import java.io.Serializable;
-import java.util.List;
 /**   
 * Copyright: Copyright (c) 2018 Montnets
 * 
@@ -72,7 +68,6 @@ public class EsBasicModelConfig implements Serializable{
 	public void setMaxResultDataCount(int maxResultDataCount) {
 		this.maxResultDataCount = maxResultDataCount;
 	}
-
 	@Override
 	public String toString() {
 		return "EsBasicModelConfig [index=" + index + ", type=" + type + ", settings=" + settings + ", mappings="

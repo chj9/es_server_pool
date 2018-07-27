@@ -1,4 +1,5 @@
-package org.montnets.elasticsearch.util;
+package org.montnets.elasticsearch.common.util;
+
 
 
 
@@ -10,7 +11,7 @@ import java.util.regex.Pattern;
 * 
 * @ClassName: NetAddrUtil.java
 * @Description: 该类的功能描述
-*从url中分离ip和port
+*	从url中分离ip和port
 * @version: v1.0.0
 * @author: chenhj
 * @date: 2018年5月25日 下午5:04:44 
@@ -20,7 +21,7 @@ import java.util.regex.Pattern;
 *---------------------------------------------------------*
 * 2018年6月14日     chenhj          v1.0.0               修改原因
  */
-public class NetAddrUtil {
+public class IpHandler {
 	
 	 private String ip;
 	 private Integer port;
@@ -55,12 +56,4 @@ public class NetAddrUtil {
 	public Integer getPort() {
 		return port;
 	}
-
-	public static void main(String [] args){  
-        String url = "10.33.32.81:8080";  
-        NetAddrUtil addr = new  NetAddrUtil();  
-        addr.IpPortFromUrl(url);
-       // IpPortAddr addr= NetAddrUtil.getIpPortFromUrl(url) ;  
-        System.out.println(addr.getIp() +"=========>" +addr.getPort() );  
-    }  
 }

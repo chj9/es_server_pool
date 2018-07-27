@@ -7,10 +7,10 @@ import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.montnets.elasticsearch.client.pool.ConnectionException;
 import org.montnets.elasticsearch.client.pool.ConnectionFactory;
+import org.montnets.elasticsearch.common.enums.EsConnect;
+import org.montnets.elasticsearch.common.exception.ConnectionException;
 import org.montnets.elasticsearch.config.EsConnectConfig;
-import org.montnets.elasticsearch.enums.EsConnect;
 
 /**
  * 
@@ -123,7 +123,7 @@ class EsConnectionFactory implements ConnectionFactory<RestHighLevelClient> {
     @Override
     public void destroyObject(PooledObject<RestHighLevelClient> p) throws Exception {
     	RestHighLevelClient client = p.getObject();
-        if (client != null){
+        if (Objects.nonNull(client)){
         	client.close();
         }
     }

@@ -1,4 +1,4 @@
-package org.montnets.elasticsearch.action;
+package org.montnets.elasticsearch.handle.action;
 
 import java.util.List;
 import java.util.Map;
@@ -10,7 +10,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.montnets.elasticsearch.util.MyTools;
+import org.montnets.elasticsearch.common.util.MyTools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

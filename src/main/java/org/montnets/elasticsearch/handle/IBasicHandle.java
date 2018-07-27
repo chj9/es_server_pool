@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.montnets.elasticsearch.action;
+package org.montnets.elasticsearch.handle;
 
 /**   
 * Copyright: Copyright (c) 2018 Montnets

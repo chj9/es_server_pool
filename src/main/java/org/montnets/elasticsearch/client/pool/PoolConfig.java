@@ -44,8 +44,6 @@ public class PoolConfig extends GenericObjectPoolConfig<Object> implements Seria
      * <p>Description: 默认构造方法</p>
      */
     public PoolConfig() {
-        // defaults to make your life with connection pool easier :)
-    	//setA
         setTestWhileIdle(DEFAULT_TEST_WHILE_IDLE);
         setMinEvictableIdleTimeMillis(DEFAULT_MIN_EVICTABLE_IDLE_TIME_MILLIS);
         setTimeBetweenEvictionRunsMillis(DEFAULT_TIME_BETWEEN_EVICTION_RUNS_MILLIS);

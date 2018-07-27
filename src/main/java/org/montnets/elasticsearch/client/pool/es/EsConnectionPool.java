@@ -26,11 +26,9 @@ import org.montnets.elasticsearch.config.EsConnectConfig;
 public class EsConnectionPool extends PoolBase<RestHighLevelClient> implements ConnectionPool<RestHighLevelClient> {
 	private static final long serialVersionUID = 1L;
     public EsConnectionPool(final EsConnectConfig esConfig) {
-
         this(new PoolConfig(), esConfig);
     }
     public EsConnectionPool(final PoolConfig poolConfig, final EsConnectConfig esConfig) {
-
         super(poolConfig, new EsConnectionFactory(esConfig));
     }
     @Override
