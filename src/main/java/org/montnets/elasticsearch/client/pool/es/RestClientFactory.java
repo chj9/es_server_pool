@@ -1,7 +1,5 @@
 package org.montnets.elasticsearch.client.pool.es;
 
-
-
 import java.io.IOException;
 import java.util.Objects;
 

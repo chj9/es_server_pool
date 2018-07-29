@@ -36,6 +36,8 @@ import org.montnets.elasticsearch.entity.EsRequestEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * 
@@ -212,7 +214,6 @@ public class SearchAction {
 		    }
 			esBean.setScrollId(scrollId);
 			//esBean.setDataList(list);
-			esBean.setIntList(list);
 			return esBean; 
 	}
 	/**
@@ -310,9 +311,12 @@ public class SearchAction {
 		 HttpEntity entity = new NStringEntity(source, ContentType.APPLICATION_JSON);
 		 Response response =restClient.performRequest("GET", endPoint,Collections.<String, String> emptyMap(),entity);
 		 String responseBody = EntityUtils.toString(response.getEntity());
-		 JSONObject json =JSON.parseObject(responseBody);
-		 //"count": 2014889998,
-		 Long count = json.getLong("count");
+		 ObjectMapper mapper = new ObjectMapper();
+		 @SuppressWarnings("rawtypes")
+		 Map map =mapper.readValue(responseBody, Map.class);
+		 // JSONObject json =JSON.parseObject(responseBody);
+		 //Long count = json.getLong("count");
+		 Long count =(Long) map.get("count");
 		 return count;
     }
     /**

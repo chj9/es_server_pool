@@ -21,7 +21,6 @@ import org.montnets.elasticsearch.entity.EsRequestEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /**
  * 
 * Copyright: Copyright (c) 2018 Montnets
@@ -53,6 +52,14 @@ public class DeleteHandler {
 		this.rhlClient=rhlClient;
 	}
 	 /**
+	  * 设置是否同步删除还是异步删除,异步删除返回值都是true  
+	  * @param isSync  同步 true ,异步 false
+	  */
+	 public DeleteHandler setSync(boolean isSync) {
+			this.isSync = isSync;
+			return this;
+	 }
+	 /**
 	  * 设置过滤条件
 	  */
 	 public DeleteHandler setQueryBuilder(QueryBuilder queryBuilder) {
@@ -63,10 +70,10 @@ public class DeleteHandler {
 	 * 根据ID删除数据
 	* @author chenhongjie 
 	*/
-	public  boolean  delDocById(String id) throws Exception{
-			 DeleteRequest request = new DeleteRequest(index,type,id); 
-			 DeleteResponse deleteResponse =  rhlClient.delete(request);
-			 return deleteResponse.status()==RestStatus.OK;
+	public  boolean  delById(String id) throws Exception{
+		DeleteRequest request = new DeleteRequest(index,type,id); 
+		DeleteResponse deleteResponse =  rhlClient.delete(request);
+		return deleteResponse.status()==RestStatus.OK;
 	}
 	/**
 	 * 根据搜索内容删除数据
@@ -85,7 +92,12 @@ public class DeleteHandler {
 			 //删除的条件
 			 String source = searchSourceBuilder.toString();
 			 HttpEntity entity = new NStringEntity(source, ContentType.APPLICATION_JSON);
-			 //Response response = restClient.performRequest("POST", command,Collections.<String, String> emptyMap(),entity);
+			 if(isSync) {
+				 LOG.info("同步删除的内容条件:{}",searchSourceBuilder.toString());
+			     Response response = restClient.performRequest("POST", endPoint,Collections.<String, String> emptyMap(),entity);
+			     boolean status = response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
+			     return status;
+			 }
 			 //异步执行
 			 RecordDeleteLog reLog = new RecordDeleteLog();
 			 reLog.setCommand(endPoint);
@@ -93,7 +105,6 @@ public class DeleteHandler {
 			 reLog.setRestClient(restClient);
 			 reLog.setLogStr(searchSourceBuilder.toString());
 			 new Thread(reLog, "删除线程_"+System.currentTimeMillis()).start();
-			 // return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
 			 return true;
 		 } catch (Exception e) {			
 				throw e;

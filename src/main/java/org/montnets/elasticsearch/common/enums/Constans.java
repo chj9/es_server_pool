@@ -1,5 +1,7 @@
 package org.montnets.elasticsearch.common.enums;
 
+import org.elasticsearch.Version;
+
 /**
  * 
 * Copyright: Copyright (c) 2018 Montnets
@@ -56,5 +58,9 @@ public enum Constans {
   	  * 程序信息
   	 */
   	 public  static final String VERSION_MAG = "elasticsearch 连接池...";
+  	 /**
+  	  * ES版本
+  	  */
+  	 public static final String ES_VERSION=Version.CURRENT.toString();
      
 }
