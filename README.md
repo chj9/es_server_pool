@@ -1,2 +1,2 @@
 # es_server_pool
-es连接池
+elasticsearch连接池，目前公司在使用elasticsearch，每套项目都写一套连接比较麻烦，干脆抽离出来，把监控连接，检查连接，还有一些公共的操作抽离出来打成jar包。
