@@ -1,5 +1,4 @@
 package org.montnets.elasticsearch.client.pool.es;
-
 import org.elasticsearch.client.RestHighLevelClient;
 import org.montnets.elasticsearch.client.pool.ConnectionPool;
 import org.montnets.elasticsearch.client.pool.PoolBase;

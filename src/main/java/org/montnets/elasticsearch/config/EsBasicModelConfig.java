@@ -25,7 +25,7 @@ public class EsBasicModelConfig implements Serializable{
 	private int maxResultDataCount;
 	
    
-	public EsBasicModelConfig(String index,String type,String mapping){
+	public EsBasicModelConfig(String index,String type){
 			   this.index=index;
 			   this.type = type;
 	}

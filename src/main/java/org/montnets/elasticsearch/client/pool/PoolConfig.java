@@ -7,14 +7,20 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import java.io.Serializable;
 
 /**
- * <p>Title: PoolConfig</p>
- * <p>Description: 默认池配置</p>
- *
- * @author Victor
- * @version 1.0
- * @see GenericObjectPoolConfig
- * @see Serializable
- * @since 2015年9月19日
+ * 
+* Copyright: Copyright (c) 2018 Montnets
+* 
+* @ClassName: PoolConfig.java
+* @Description: 默认池配置
+*
+* @version: v1.0.0
+* @author: chenhj
+* @date: 2018年7月30日 下午1:48:55 
+*
+* Modification History:
+* Date         Author          Version            Description
+*---------------------------------------------------------*
+* 2018年7月30日     chenhj          v1.0.0               修改原因
  */
 public class PoolConfig extends GenericObjectPoolConfig<Object> implements Serializable {
 
@@ -40,8 +46,7 @@ public class PoolConfig extends GenericObjectPoolConfig<Object> implements Seria
     private static final long serialVersionUID = -2414567557372345057L;
 
     /**
-     * <p>Title: PoolConfig</p>
-     * <p>Description: 默认构造方法</p>
+     * 默认构造方法
      */
     public PoolConfig() {
         setTestWhileIdle(DEFAULT_TEST_WHILE_IDLE);

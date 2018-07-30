@@ -44,12 +44,12 @@ public class EsConnectConfig implements Serializable{
     /**
      * username
      */
-    private  String username;
+ //   private  String username;
 
     /**
      * password
      */
-    private  String password;
+  //  private  String password;
     
     
 	/*********以下为连接配置*********/
@@ -123,19 +123,6 @@ public class EsConnectConfig implements Serializable{
 	}
 	public void add(EsBasicModelConfig esBasicModelConfig) {
 		this.indexList.add(esBasicModelConfig);
-	}
-	
-	public String getUsername() {
-		return username;
-	}
-	public void setUsername(String username) {
-		this.username = username;
-	}
-	public String getPassword() {
-		return password;
-	}
-	public void setPassword(String password) {
-		this.password = password;
 	}
 	public  HttpHost[] getNodes() throws IllegalAccessException {
 		if(nodes==null||nodes.length==0){

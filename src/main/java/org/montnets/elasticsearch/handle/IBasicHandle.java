@@ -19,6 +19,9 @@ package org.montnets.elasticsearch.handle;
 * 2018年7月27日     chenhj          v1.0.0               修改原因
 */
 public interface IBasicHandle {
-	
+	/**
+	 * 打印查询JSON语句
+	 * @return
+	 */
 	public String toDSL();
 }

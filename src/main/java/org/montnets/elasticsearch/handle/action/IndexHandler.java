@@ -13,7 +13,6 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.montnets.elasticsearch.client.pool.es.RestClientFactory;
 import org.montnets.elasticsearch.config.EsBasicModelConfig;
-import org.montnets.elasticsearch.handle.IBasicHandle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +31,7 @@ import org.slf4j.LoggerFactory;
 *---------------------------------------------------------*
 * 2018年7月26日     chenhj          v1.0.0               修改原因
 */
-public class IndexHandler implements IBasicHandle{
+public class IndexHandler{
 	private static final Logger logger = LoggerFactory.getLogger(RestClientFactory.class);
 	private RestHighLevelClient client;
 	public IndexHandler(RestHighLevelClient client){
@@ -44,7 +43,8 @@ public class IndexHandler implements IBasicHandle{
      * @return  存在：true; 不存在：false;
 	 * @throws IOException 
      */
-	public boolean isExistsIndex(String index) throws IOException{
+	public boolean existsIndex(String index) throws IOException{
+		Objects.requireNonNull(index, "index can not null");
         boolean isExists=true;
 		try {
 			RestClient restClient = client.getLowLevelClient();
@@ -60,13 +60,11 @@ public class IndexHandler implements IBasicHandle{
      * 如果索引库不存在则创建一个
      * @return  成功：true; 失败：false;
      */
-  public boolean createIndex(EsBasicModelConfig esBasicModelConfig){
+  public boolean createIndex(final EsBasicModelConfig esBasicModelConfig){
     	boolean falg = true;
     Objects.requireNonNull(esBasicModelConfig,"esBasicModelConfig is not null");
-	String type = esBasicModelConfig.getType();
-	String index =esBasicModelConfig.getIndex();
-	Objects.requireNonNull(type,"type is not null");
-    Objects.requireNonNull(index,"index is not null");
+	String type = Objects.requireNonNull(esBasicModelConfig.getType(),"type is not null");
+	String index=Objects.requireNonNull(esBasicModelConfig.getIndex(),"index is not null");
 	String mapping = esBasicModelConfig.getMappings();
 	String setting = esBasicModelConfig.getSettings();
 	//开始创建库
@@ -85,6 +83,10 @@ public class IndexHandler implements IBasicHandle{
     		}
 			CreateIndexResponse createIndexResponse = client.indices().create(request);
 			falg = createIndexResponse.isAcknowledged();
+			if(falg&&Objects.nonNull(esBasicModelConfig.getMaxResultDataCount())){
+				//设置查询单次返回最大值
+				maxResultWindow(index,esBasicModelConfig.getMaxResultDataCount());
+			}
 			logger.info("创建索引库"+index+",状态为:"+falg);
 		} catch (IOException e) {
 			logger.error("创建INDEX报错",e);
@@ -111,9 +113,4 @@ public class IndexHandler implements IBasicHandle{
 			throw e;
 		}
     }
-	@Override
-	public String toDSL() {
-		
-		return null;
-	}
 }

@@ -37,7 +37,7 @@ public class EsRequestEntity<T> implements Serializable{
 	/*****滚动取数据的时候单次取多少,默认一次1000*******/
 	private int limit=1000;
 	/*****响应数据集*******/
-	private List<T> dataList = null;//响应数据集
+	private List<T> responseDataList = null;//响应数据集
 	/*******本次请求条件数据总数*********/
 	private long totalCount = -1L;
 	/*****滚动数据时候产生的游标ID*******/
@@ -50,11 +50,12 @@ public class EsRequestEntity<T> implements Serializable{
 	public void setType(String type) {
 		this.type = type;
 	}
-	public List<T> getDataList() {
-		return dataList;
+	
+	public List<T> getResponseDataList() {
+		return responseDataList;
 	}
-	public void setDataList(List<T> dataList) {
-		this.dataList = dataList;
+	public void setResponseDataList(List<T> responseDataList) {
+		this.responseDataList = responseDataList;
 	}
 	public long getTotalCount() {
 		return totalCount;

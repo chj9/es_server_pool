@@ -56,11 +56,11 @@ class EsConnectionFactory implements ConnectionFactory<RestHighLevelClient> {
     /**
      * username
      */
-    private final String username;
+   // private final String username;
     /**
      * password
      */
-    private final String password;
+  //  private final String password;
 
     public EsConnectionFactory(final EsConnectConfig esConfig) {
     	if(Objects.isNull(esConfig)){
@@ -102,16 +102,16 @@ class EsConnectionFactory implements ConnectionFactory<RestHighLevelClient> {
         if (Objects.isNull(maxConnTotal)){
         	throw new ConnectionException("[maxConnTotal] is required !");
         }
-        this.username =esConfig.getUsername();
+     //   this.username =esConfig.getUsername();
      //  if (username == null)
           //  throw new ConnectionException("[username] is required !");
-        this.password = esConfig.getPassword();
+      //  this.password = esConfig.getPassword();
       //  if (password == null)
           //  throw new ConnectionException("[password] is required !");
     }
-    /**
-     *创建一个实例到对象池  
-     */
+	/**
+	 * 当对象池中没有多余的对象可以用的时候，调用此方法。
+	 */
     @Override
     public PooledObject<RestHighLevelClient> makeObject() throws Exception {
     	RestHighLevelClient client = this.createConnection();
@@ -138,7 +138,7 @@ class EsConnectionFactory implements ConnectionFactory<RestHighLevelClient> {
     @Override
     public boolean validateObject(PooledObject<RestHighLevelClient> p) {
     	RestHighLevelClient client = p.getObject();
-        if (client != null){
+    	if (client != null){
         	try {
 				return client.ping(EsConnect.EMPTY_HEADERS);
 			} catch (IOException e) {
@@ -165,7 +165,7 @@ class EsConnectionFactory implements ConnectionFactory<RestHighLevelClient> {
 	 */
     @Override
     public void passivateObject(PooledObject<RestHighLevelClient> p) throws Exception {
-        // TODO Auto-generated method stub
+       
     }
     @Override
     public RestHighLevelClient createConnection() throws Exception {

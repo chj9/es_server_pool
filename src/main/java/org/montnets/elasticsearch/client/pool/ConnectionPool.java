@@ -20,7 +20,7 @@ import java.io.Serializable;
 *---------------------------------------------------------*
 * 2018年7月27日     chenhj          v1.0.0               修改原因
  */
-public interface ConnectionPool<T> extends Serializable  {
+public interface ConnectionPool<T>  extends Serializable  {
 
     /**
      * <p>Title: getConnection</p>

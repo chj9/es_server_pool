@@ -1,10 +1,5 @@
 package org.montnets.elasticsearch.client.pool;
-
-
-
-import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.PooledObjectFactory;
-
 import java.io.Serializable;
 
 /**

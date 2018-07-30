@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
@@ -33,67 +34,86 @@ import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.montnets.elasticsearch.common.util.MyTools;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.core.JsonParser;
+import org.montnets.elasticsearch.handle.IBasicHandle;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * 
- * @Title:  SearchIndexAction.java   
- * @Description:  es查询工具类
- * @author: chenhongjie     
- * @date:   2018年5月25日 上午9:14:11   
- * @version V1.0
+* Copyright: Copyright (c) 2018 Montnets
+* 
+* @ClassName: SearchHandler.java
+* @Description:  es查询处理
+*
+* @version: v1.0.0
+* @author: chenhj
+* @date: 2018年7月30日 上午10:34:22 
+*
+* Modification History:
+* Date         Author          Version            Description
+*---------------------------------------------------------*
+* 2018年7月30日     chenhj          v1.0.0               修改原因
  */
-public class SearchAction {
+public class SearchHandler implements IBasicHandle{
 	  private String index;
 	  private String type;	  
 	  private RestHighLevelClient rhlClient;
 	  private	QueryBuilder queryBuilder;
-	  private String sortfield;
-	  private String order;
-	  private EsRequestEntity<?> esBean;
+	  private  SearchSourceBuilder searchSourceBuilder;
+	  /*********排序字段*************/
+	  private String sortField;
+	  /**********排序方法************/
+	  private SortOrder sortOrder;
+	  /********数据集合体*********/
+	  private EsRequestEntity<?> esRequestEntity;
 	  private Script script=null;
+	  private String scriptName;
+	  /*******只要哪些字段********/
 	  private String[] includeFields =null;
+	  /*******排除哪些字段********/
 	  private String[] excludeFields = null;
-	  private static final Logger LOG = LoggerFactory.getLogger("esLog");
 	  /**
-	   * 只有在执行一次查询之后才会有总数
+	   * 只有在执行一次查询之后才会有总数,与搜索请求匹配的总命中数。
 	   */
 	  private long totalCount;
-		public SearchAction(RestHighLevelClient rhlClient,EsRequestEntity<?> esBean){
-		this.index=esBean.getIndex();
-		this.type =esBean.getIndex();
-		if(esBean.getType()!=null){
-			this.type =esBean.getType();
+	  public SearchHandler(RestHighLevelClient rhlClient,EsRequestEntity<?> esRequestEntity){
+		Objects.requireNonNull(rhlClient, "RestHighLevelClient can not null");
+		Objects.requireNonNull(esRequestEntity, "EsRequestEntity can not null");
+		this.index=esRequestEntity.getIndex();
+		this.type =esRequestEntity.getIndex();
+		if(esRequestEntity.getType()!=null){
+			this.type =esRequestEntity.getType();
 		}
-		this.esBean=esBean;
+		this.esRequestEntity=esRequestEntity;
 		this.rhlClient=rhlClient;
 	}
 	/**
 	 * 设置脚本
 	*/
-	public SearchAction setScript(Script script) {
+	public SearchHandler setScript(final String scriptName,final Script script) {
+		Objects.requireNonNull(scriptName, "scriptName can not null");
+		Objects.requireNonNull(script, "script can not null");
+		this.scriptName=scriptName;
 		this.script = script;
 		return this;
 	}
 	 /**
 	  * 设置过滤条件
 	  */
-	 public SearchAction setQueryBuilder(QueryBuilder queryBuilder) {
-			this.queryBuilder = queryBuilder;
-			return this;
+	 public SearchHandler setQueryBuilder(final QueryBuilder queryBuilder) {
+		 Objects.requireNonNull(queryBuilder, "QueryBuilder can not null");
+		 this.queryBuilder = queryBuilder;
+		 return this;
 	 }
 	 /**
 	  * 设置排序(可选)
 	  * @param field 排序的参数
 	  * @param order 排序方法
 	  */
-	 public SearchAction addSort(String field, String order){
-		 this.sortfield=field;
-		 this.order=order;
+	 public SearchHandler addSort(final String field,final SortOrder sortOrder){
+		 Objects.requireNonNull(field, "field can not null");
+		 Objects.requireNonNull(sortOrder, "order can not null");
+		 this.sortField=field;
+		 this.sortOrder=sortOrder;
 		 return this;
 	 }
 	 /**
@@ -101,131 +121,75 @@ public class SearchAction {
 	  * @param includeFields 需要的字段
 	  * @param excludeFields 不需要的字段
 	  */
-	 public SearchAction fetchSource(String[] includeFields,String[] excludeFields){
+	 public SearchHandler fetchSource(String[] includeFields,String[] excludeFields){
 		 this.excludeFields=excludeFields;
 		 this.includeFields=includeFields;
 		 return this;
 	 }
+	 /**
+	  * 数据转为map后返回
+	  * @return
+	  * @throws Exception
+	  */
+	 public  List<Map<String, Object>>  sraechSourceAsList() throws Exception{
+		 SearchHits hits = sraech(); 
+		 return hitsToList(hits);
+	 }
 	/**
-	 * 查询方法
-	* @author chenhongjie 
+	 * 普通查询方法
 	 */
-	public  List<Map<String, Object>>  sraech() throws Exception{
-		 List<Map<String, Object>>  list = new ArrayList<Map<String, Object>>();
-		 SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
+	public synchronized SearchHits sraech() throws Exception{
+		 searchSourceBuilder = new SearchSourceBuilder(); 
 		 try {
-			 SearchRequest searchRequest = new SearchRequest(index); 
-			 searchRequest.types(type);
-			 	//是否需要分页
-	    		if(esBean.isNeedPaging()){
-			        searchSourceBuilder.from(esBean.getStartIndex()).size(esBean.getPageSize());  
-	    		}else{
-	    			searchSourceBuilder.size(esBean.getLimit());
-	    		}
+			SearchRequest searchRequest = new SearchRequest(index); 
+			searchRequest.types(type);
+			//是否需要分页
+	    	if(esRequestEntity.isNeedPaging()){
+			    searchSourceBuilder.from(esRequestEntity.getStartIndex()).size(esRequestEntity.getPageSize());  
+	    	}else{
+	    		//如果不分页则设置每次多少数据,默认1000条
+	    		searchSourceBuilder.size(esRequestEntity.getLimit());
+	    	}
 			//是否需要排序,没有则不需要
-		    if(MyTools.isNotEmpty(sortfield)&&MyTools.isNotEmpty(order)){
-					   if("desc".equals(order)){
-						   searchSourceBuilder.sort(new FieldSortBuilder(sortfield).order(SortOrder.DESC));
-					   }else if("asc".equals(order)){
-						   searchSourceBuilder.sort(new FieldSortBuilder(sortfield).order(SortOrder.ASC));
-			      }
-			  }
-		     //设置过滤字段
-			 if(includeFields!=null||excludeFields!=null){
+		    if(MyTools.isNotEmpty(sortField)&&Objects.nonNull(sortOrder)){
+				searchSourceBuilder.sort(new FieldSortBuilder(sortField).order(sortOrder));
+			}
+		    //设置过滤字段
+			if(includeFields!=null||excludeFields!=null){
 				 searchSourceBuilder.fetchSource(includeFields,excludeFields);
 			 }
-			 if(script!=null){
-				 searchSourceBuilder.scriptField("mont", script);
+			 if(Objects.nonNull(script)){
+				 searchSourceBuilder.scriptField(scriptName, script);
 			 }
 			 //不需要解释
 			 searchSourceBuilder.explain(false);
 			 //不需要版本号
 			 searchSourceBuilder.version(false);
 		     //是否有自定义条件
-		     if(queryBuilder!=null)searchSourceBuilder.query(queryBuilder); 
-		     LOG.debug("通用查询条件:{}",searchSourceBuilder.toString());
+		     if(Objects.nonNull(queryBuilder)){
+		    	 searchSourceBuilder.query(queryBuilder); 
+		     }
 			 searchRequest.source(searchSourceBuilder); 
-
 			 SearchResponse searchResponse = rhlClient.search(searchRequest);
 			 SearchHits hits = searchResponse.getHits();
-			 
-		     for (SearchHit hit : hits) {
-		    	
-		    	 list.add(hit.getSourceAsMap());
-		      }
+
 			 totalCount=hits.getTotalHits();
-		 } catch (Exception e) {			
-			 LOG.error("查询失败!查询条件:{},原因是:",searchSourceBuilder.toString());
+			 return hits; 
+		 } catch (Exception e) {
 			 throw e;
 		}
-	    return list; 
-	}
-	/**
-	 * 查询方法
-	* @author chenhongjie 
-	 */
-	public  EsRequestEntity<?>  sraechScript() throws Exception{
-		 List<Long>  list = new ArrayList<Long>();
-		 String scrollId = esBean.getScrollId();	
-		 SearchHits hits = null;
-		 //首次进入
-			if(MyTools.isEmpty(scrollId)){
-				SearchRequest searchRequest = new SearchRequest(index);
-				
-				//searchRequest.searchType(SearchType.DFS_QUERY_THEN_FETCH);
-				SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-				searchSourceBuilder.size(esBean.getLimit()); 
-				 if(script!=null){
-					 searchSourceBuilder.scriptField("mont", script);
-				 }
-				 //测试用
-				// searchSourceBuilder.profile(true);
-				 //不需要解释
-				 searchSourceBuilder.explain(false);
-				 //不需要版本号
-				 searchSourceBuilder.version(false);
-			     //是否有自定义条件
-			     if(queryBuilder!=null)searchSourceBuilder.query(queryBuilder);      
-			     searchRequest.source(searchSourceBuilder);
-			     LOG.info("(最大,最小,平均)查询条件:{}",searchSourceBuilder.toString());
-			     searchRequest.scroll(TimeValue.timeValueMinutes(2));//数据保持多久 
-			     SearchResponse searchResponse = rhlClient.search(searchRequest);
-			     scrollId = searchResponse.getScrollId(); 
-			      hits = searchResponse.getHits();
-
-			}
-			//非首次进入
-			else{
-				SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId); 
-				scrollRequest.scroll(TimeValue.timeValueMinutes(1));
-				SearchResponse searchScrollResponse = rhlClient.searchScroll(scrollRequest);
-				hits = searchScrollResponse.getHits(); 
-				scrollId = searchScrollResponse.getScrollId();  
-			}
-			//导出数据
-		    for (SearchHit hit : hits) {
-		    	 Map<String, DocumentField> map = hit.getFields();
-		    	 try {
-		    		 Long difference =(long) Math.abs(map.get("mont").getValue());
-		    		 list.add(difference);
-				} catch (Exception e) {
-					//这里异常不处理
-				}
-		    }
-			esBean.setScrollId(scrollId);
-			//esBean.setDataList(list);
-			return esBean; 
+	    
 	}
 	/**
 	 * 根据ID查询
-	* @author chenhongjie 
 	 */
-	public  Map<String, Object>  sraechById(String idvalue) throws Exception{
+	public synchronized Map<String, Object>  sraechById(String idvalue) throws Exception{
+		Objects.requireNonNull(idvalue, "id can not null");
 		Map<String, Object> map =new HashMap<String, Object>();
 		 try {
 			 GetRequest getRequest = new GetRequest(index,type,idvalue);
 		     //设置过滤字段
-			 if(includeFields!=null||excludeFields!=null){
+			 if(Objects.nonNull(includeFields)||Objects.nonNull(excludeFields)){
 				 FetchSourceContext fetchSourceContext = new FetchSourceContext(true, includeFields, excludeFields);
 				 getRequest.fetchSourceContext(fetchSourceContext);
 			 }
@@ -238,18 +202,21 @@ public class SearchAction {
 		}
 	    return map; 
 	}
-	public EsRequestEntity<Map<String, Object>> searchScroll() throws IOException{
+	/**
+	 * 滚动遍历数据接口
+	 * @return
+	 * @throws IOException
+	 */
+	public synchronized EsRequestEntity<Map<String, Object>> searchScroll() throws IOException{
 		 List<Map<String, Object>>  list = new ArrayList<Map<String, Object>>();
-		 String scrollId = esBean.getScrollId();
+		 String scrollId = esRequestEntity.getScrollId();
 		//首次进入
 		if(MyTools.isEmpty(scrollId)){
 			SearchRequest searchRequest = new SearchRequest(index);
-			
-			//searchRequest.searchType(SearchType.DFS_QUERY_THEN_FETCH);
-			SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-			searchSourceBuilder.size(esBean.getLimit()); 
+			searchSourceBuilder = new SearchSourceBuilder();
+			searchSourceBuilder.size(esRequestEntity.getLimit()); 
 		     //设置过滤字段
-			 if(includeFields!=null||excludeFields!=null){
+			 if(Objects.nonNull(includeFields)||Objects.nonNull(excludeFields)){
 				 searchSourceBuilder.fetchSource(includeFields,excludeFields);
 			 }
 			 //测试用
@@ -259,7 +226,9 @@ public class SearchAction {
 			 //不需要版本号
 			 searchSourceBuilder.version(false);
 		     //是否有自定义条件
-		     if(queryBuilder!=null)searchSourceBuilder.query(queryBuilder);      
+		     if(Objects.nonNull(queryBuilder)){
+		    	 searchSourceBuilder.query(queryBuilder);      
+		     }
 		     	searchRequest.source(searchSourceBuilder);
 		     	searchRequest.scroll(TimeValue.timeValueMinutes(10));//数据保持多久 
 		     	SearchResponse searchResponse = rhlClient.search(searchRequest);
@@ -282,10 +251,17 @@ public class SearchAction {
 		}
 		EsRequestEntity<Map<String, Object>> esBeanTemp = new EsRequestEntity<>();
 		esBeanTemp.setScrollId(scrollId);
-		esBeanTemp.setDataList(list);
+		esBeanTemp.setResponseDataList(list);
 		return esBeanTemp; 
 	}
-	public boolean clearScroll(String scrollId) throws IOException{
+	/**
+	 * 清除滚动ID
+	 * @param scrollId 滚动ID
+	 * @return
+	 * @throws IOException
+	 */
+	public synchronized boolean clearScroll(String scrollId) throws IOException{
+		Objects.requireNonNull(scrollId, "scrollId can not null");
 		ClearScrollRequest clearScrollRequest = new ClearScrollRequest(); 
 		clearScrollRequest.addScrollId(scrollId);
 		ClearScrollResponse clearScrollResponse = rhlClient.clearScroll(clearScrollRequest);
@@ -297,12 +273,12 @@ public class SearchAction {
      * @return  
      * @throws Exception  
      */  
-    public Long count() throws Exception {  
-    	 SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
+    public synchronized Long count() throws Exception {  
+    	 searchSourceBuilder = new SearchSourceBuilder(); 
 	     //是否有自定义条件
-	     if(queryBuilder!=null)searchSourceBuilder.query(queryBuilder);
-
-	     LOG.info("总数查询条件:{}",searchSourceBuilder.toString());
+	     if(Objects.nonNull(queryBuilder)){
+	    	 searchSourceBuilder.query(queryBuilder);
+	     }
 	     //取低级客户端API来执行这步操作
 	     RestClient restClient = rhlClient.getLowLevelClient();
 		 String endPoint = "/" + index + "/" + type +"/_count";
@@ -314,19 +290,18 @@ public class SearchAction {
 		 ObjectMapper mapper = new ObjectMapper();
 		 @SuppressWarnings("rawtypes")
 		 Map map =mapper.readValue(responseBody, Map.class);
-		 // JSONObject json =JSON.parseObject(responseBody);
-		 //Long count = json.getLong("count");
-		 Long count =(Long) map.get("count");
-		 return count;
+		 Integer count =(Integer) map.get("count");
+		 return count.longValue();
     }
     /**
      * 根据ID查询数据是否存在
      * @param ID值
      */
-    public  boolean existsDocById(String idvalue){
+    public synchronized  boolean existsDocById(String idvalue){
+    	Objects.requireNonNull(idvalue, "id can not null");
     	boolean isExists=false;
  		try {
- 			RestClient restClient = EsConstant.client.getRhlClient().getLowLevelClient();
+ 			RestClient restClient = rhlClient.getLowLevelClient();
  			String endPoint = "/" + index + "/" + type +"/"+idvalue.trim();
  	        Response response = restClient.performRequest("HEAD",endPoint,Collections.<String, String>emptyMap());
  	        isExists =response.getStatusLine().getReasonPhrase().equals("OK");
@@ -340,5 +315,37 @@ public class SearchAction {
      */
 	public long getTotalCount() {
 		return totalCount;
+	}
+	/**
+	 * SearchHits 转 List的公共方法
+	 * @param hits
+	 * @return
+	 */
+	private List<Map<String, Object>> hitsToList(SearchHits hits){
+		 List<Map<String, Object>>  list = new ArrayList<Map<String, Object>>();
+		 Map<String, DocumentField> map = null;
+		 for (SearchHit hit : hits) {
+			  /************如果是脚本查询将是另外一个取值方法***************/
+			  if(Objects.nonNull(script)){
+				    	map = hit.getFields();
+				    	Map<String, Object> mapScript = new HashMap<>();
+				    	Object value = map.get(scriptName).getValue();
+				    	mapScript.put(scriptName,value);
+				    	list.add(mapScript);
+			  }
+			  //普通取值方法
+			  else{
+			    list.add(hit.getSourceAsMap());
+			  }
+		  }
+		 return list;
+	}
+	/**
+	 * 打印当前请求的DSL语句,只有在执行查询方法后才能有DSL语句
+	 */
+	@Override
+	public String toDSL() {
+		Objects.requireNonNull(searchSourceBuilder, "not request DSL!");
+		return searchSourceBuilder.toString();
 	}
 }

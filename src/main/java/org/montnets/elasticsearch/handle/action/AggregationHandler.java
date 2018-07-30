@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -26,8 +27,7 @@ import org.elasticsearch.search.aggregations.metrics.min.Min;
 import org.elasticsearch.search.aggregations.metrics.sum.Sum;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.montnets.elasticsearch.handle.IBasicHandle;
 /**   
 * Copyright: Copyright (c) 2018 Montnets
 * 
@@ -42,18 +42,18 @@ import org.slf4j.LoggerFactory;
 *---------------------------------------------------------*
 * 2018年6月12日     chenhj          v1.0.0               修改原因
 */
-public class AggregationHandler {
+public class AggregationHandler implements IBasicHandle{
 	  private String index;
 	  private String type;	  
 	  private RestHighLevelClient rhlClient;
 	  private QueryBuilder queryBuilder;
 	  private Script script=null;
 	  private String count ="count";
+	  private SearchSourceBuilder searchSourceBuilder;
 	  private  AggregationBuilder aggregationBuilder;
-	  private static final Logger LOG = LoggerFactory.getLogger(SearchAction.class);
-	 public AggregationHandler(RestHighLevelClient rhlClient,EsRequestEntity<?> entity){
-		this.index=entity.getIndex();
-		this.type =entity.getType();
+   	  public AggregationHandler(RestHighLevelClient rhlClient,EsRequestEntity<?> entity){
+		this.index=Objects.requireNonNull(entity.getIndex(),"index can not null");
+		this.type =Objects.requireNonNull(entity.getType(),"type can not null");
 		this.rhlClient=rhlClient;
 	}
 	 /**
@@ -97,13 +97,13 @@ public class AggregationHandler {
 	}
 	private List<Map<String,Object>> listmap =null;
 	private Map<String,Object> map =null;
-	private  List<Map<String, Object>>  sraechEsAgg(String countField) throws Exception{
+	private synchronized  List<Map<String, Object>>  sraechEsAgg(String countField) throws Exception{
 		listmap= new ArrayList<Map<String,Object>>();
 		map= new HashMap<String,Object>();
 		 try {
 			 SearchRequest searchRequest = new SearchRequest(index); 
 			 searchRequest.types(type);
-			 SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
+			 searchSourceBuilder = new SearchSourceBuilder(); 
 		     if(script!=null){
 		    	 searchSourceBuilder.scriptField("myscript", script);
 		     }
@@ -120,8 +120,6 @@ public class AggregationHandler {
 		     if(queryBuilder!=null){
 		    	 searchSourceBuilder.query(queryBuilder); 
 		     }
-		     
-		     LOG.info("----聚合查询条件-----:"+searchSourceBuilder.toString());
 			 searchRequest.source(searchSourceBuilder); 
 			 SearchResponse searchResponse = rhlClient.search(searchRequest);
 			 Aggregations aggregations = searchResponse.getAggregations();			
@@ -131,6 +129,10 @@ public class AggregationHandler {
 			throw e;
 		}
 	}
+ /**
+  * 因为聚合的特殊性后续会写到文档中
+  * @param agg
+  */
  private void aggHandle(Aggregations agg){
 	 String name ="";
 	 Long longValue = 0L;
@@ -211,5 +213,10 @@ public class AggregationHandler {
 			map.put(key, value);
 		}
 		return map;
+	}
+	@Override
+	public String toDSL() {
+		// TODO Auto-generated method stub
+		return searchSourceBuilder.toString();
 	}
 }

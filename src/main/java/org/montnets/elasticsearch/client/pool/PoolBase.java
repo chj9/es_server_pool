@@ -11,14 +11,20 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.montnets.elasticsearch.common.exception.ConnectionException;
 
 /**
- * <p>Title: PoolBase</p>
- * <p>Description: 池基类</p>
- *
- * @author Victor
- * @version 1.0
- * @see Closeable
- * @see Serializable
- * @since 2015年9月19日
+ * 
+* Copyright: Copyright (c) 2018 Montnets
+* 
+* @ClassName: PoolBase.java
+* @Description: 池基类
+*
+* @version: v1.0.0
+* @author: chenhj
+* @date: 2018年7月30日 下午1:49:21 
+*
+* Modification History:
+* Date         Author          Version            Description
+*---------------------------------------------------------*
+* 2018年7月30日     chenhj          v1.0.0               修改原因
  */
 public abstract class PoolBase<T> implements Closeable, Serializable {
 

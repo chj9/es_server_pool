@@ -4,6 +4,7 @@ package org.montnets.elasticsearch.handle.action;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Objects;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
@@ -18,6 +19,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
+import org.montnets.elasticsearch.handle.IBasicHandle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,18 +39,17 @@ import org.slf4j.LoggerFactory;
 *---------------------------------------------------------*
 * 2018年6月14日     chenhj          v1.0.0               修改原因
  */
-public class DeleteHandler {
+public class DeleteHandler implements IBasicHandle{
 	  
 	  private String index;
 	  private String type;	  
 	  private RestHighLevelClient rhlClient;
 	  private	QueryBuilder queryBuilder;
+	  private SearchSourceBuilder searchSourceBuilder;
 	  private boolean isSync = false;
-	  private static final Logger LOG = LoggerFactory.getLogger(DeleteHandler.class);
-
 	public DeleteHandler(RestHighLevelClient rhlClient,EsRequestEntity<?> entity){
-		this.index=entity.getIndex();
-		this.type =entity.getType();
+		this.index=Objects.requireNonNull(entity.getIndex(),"index can not null");
+		this.type =Objects.requireNonNull(entity.getType(),"type can not null");
 		this.rhlClient=rhlClient;
 	}
 	 /**
@@ -81,9 +82,11 @@ public class DeleteHandler {
 	 */
 	public  boolean  delDocByQuery() throws Exception{
 		 try {
-			 SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
+			 searchSourceBuilder = new SearchSourceBuilder(); 
 		     //是否有自定义条件
-		     if(queryBuilder==null)throw new RuntimeException("请设置删除条数,或者你是想删除整个库?");
+		     if(queryBuilder==null){
+		    	 throw new RuntimeException("请设置删除条数,或者你是想删除整个库?");
+		     }
 		     searchSourceBuilder.query(queryBuilder);
 		     //LOG.debug("删除的内容条件:{}",searchSourceBuilder.toString());
 		     //取低级客户端API来执行这步操作
@@ -93,7 +96,6 @@ public class DeleteHandler {
 			 String source = searchSourceBuilder.toString();
 			 HttpEntity entity = new NStringEntity(source, ContentType.APPLICATION_JSON);
 			 if(isSync) {
-				 LOG.info("同步删除的内容条件:{}",searchSourceBuilder.toString());
 			     Response response = restClient.performRequest("POST", endPoint,Collections.<String, String> emptyMap(),entity);
 			     boolean status = response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
 			     return status;
@@ -104,11 +106,15 @@ public class DeleteHandler {
 			 reLog.setEntity(entity);
 			 reLog.setRestClient(restClient);
 			 reLog.setLogStr(searchSourceBuilder.toString());
-			 new Thread(reLog, "删除线程_"+System.currentTimeMillis()).start();
+			 new Thread(reLog, "DELETE_"+System.currentTimeMillis()).start();
 			 return true;
 		 } catch (Exception e) {			
 				throw e;
 		}
+	}
+	@Override
+	public String toDSL() {
+		return searchSourceBuilder.toString();
 	}
 }
 /**
