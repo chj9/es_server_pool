@@ -1,9 +1,9 @@
 # 简介
-elasticsearch连接池，目前公司在使用elasticsearch，每套项目都写一套连接比较麻烦，干脆抽离出来，把监控连接，检查连接，还有一些公共的操作抽离出来打成jar包。
+elasticsearch连接池，目前公司在使用elasticsearch，每套项目都写一套连接比较麻烦，干脆抽离出来，还有一些公共的操作抽离出来打成jar包。
 # 环境
-jdk1.8
-elasticsearch 6.3.0(因为项目中RestHighLevelClient才开始支持的,所以本套代码不支持版本6以下的ES)
-log4j 如果需要替换参考官方文档
+jdk1.8<br/>
+elasticsearch 6.3.0(因为项目中RestHighLevelClient才开始支持的,所以本套代码不支持版本6以下的ES)<br/>
+log4j 如果需要替换参考官方文档<br/>
 commons-pool2
 # 示例
 ```
