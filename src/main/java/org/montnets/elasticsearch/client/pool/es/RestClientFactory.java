@@ -14,24 +14,39 @@ import org.elasticsearch.client.RestClientBuilder.HttpClientConfigCallback;
 import org.elasticsearch.client.RestClientBuilder.RequestConfigCallback;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.montnets.elasticsearch.common.enums.EsConnect;
-/**  
- * @Title:  RestClient.java   
- * @Description:  TODO(用一句话描述该文件做什么)  
- * Es中的rest客户端
+/**
+ * 
+* Copyright: Copyright (c) 2018 Montnets
+* 
+* @ClassName: RestClientFactory.java
+* @Description: 该类的功能描述
+* Es中的rest客户端
  * 文档地址:
  * https://www.elastic.co/guide/en/elasticsearch/client/java-rest/6.2/java-rest-high-getting-started-initialization.html 
- * @author: chenhongjie     
- * @date:   2018年4月8日 下午4:43:43   
- * @version V1.0 
+* @version: v1.0.0
+* @author: chenhj
+* @date: 2018年7月31日 下午3:12:43 
+*
+* Modification History:
+* Date         Author          Version            Description
+*---------------------------------------------------------*
+* 2018年7月31日     chenhj          v1.0.0               修改原因
  */
 public class RestClientFactory {
 		private static Logger logger = LogManager.getLogger(RestClientFactory.class);
-	 	public  int CONNECT_TIMEOUT_MILLIS = EsConnect.DEFAULT_CONNECT_TIMEOUT_MILLIS;//连接时间
-	    public  int SOCKET_TIMEOUT_MILLIS = EsConnect.DEFAULT_SOCKET_TIMEOUT_MILLIS;//等待时间
+		/******连接时间*******/
+	 	public  int CONNECT_TIMEOUT_MILLIS = EsConnect.DEFAULT_CONNECT_TIMEOUT_MILLIS;
+	 	/******等待时间***********/
+	    public  int SOCKET_TIMEOUT_MILLIS = EsConnect.DEFAULT_SOCKET_TIMEOUT_MILLIS;
+	    /******连接请求超时时间**************/
 	    public  int CONNECTION_REQUEST_TIMEOUT_MILLIS = EsConnect.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS;
-	    public  int MAX_RETRY_TIMEOUT_MILLIS=EsConnect.DEFAULT_MAX_RETRY_TIMEOUT_MILLIS; //查询超时时间设为5分钟
+	    /******查询超时时间***************/
+	    public  int MAX_RETRY_TIMEOUT_MILLIS=EsConnect.DEFAULT_MAX_RETRY_TIMEOUT_MILLIS;
+	    /******路由连接的最大数************/
 	    public  int MAX_CONN_PER_ROUTE = EsConnect.DEFAULT_MAX_CONN_PER_ROUTE;
-	    public  int MAX_CONN_TOTAL =EsConnect.DEFAULT_MAX_CONN_TOTAL; 	    
+	    /*******连接池的大小****************/
+	    public  int MAX_CONN_TOTAL =EsConnect.DEFAULT_MAX_CONN_TOTAL; 
+	    /********节点IP地址***********/
 	    private HttpHost[] HTTP_HOST;
 	    private RestClientBuilder builder;
 	    private RestHighLevelClient restHighLevelClient;
@@ -57,10 +72,11 @@ public class RestClientFactory {
 	        setConnectTimeOutConfig();
 	        setMutiConnectConfig();
 	        restHighLevelClient = new RestHighLevelClient(builder);
-	      //  restClient = builder.build();
-	        logger.info("Initialization elasticsearch success!!");
+	        logger.info("Init elasticsearch success!!");
 	    }
-	    // 配置连接时间延时
+	    /**
+	     * 配置连接时间延时
+	     */
 	    private void setConnectTimeOutConfig(){
 	        builder.setRequestConfigCallback(new RequestConfigCallback() {
 	            @Override
@@ -88,7 +104,7 @@ public class RestClientFactory {
 	    protected  RestHighLevelClient getRhlClient() {
 	        return restHighLevelClient;
 	    }
-	    protected void close() {
+	    protected synchronized void close() {
 	        if (Objects.nonNull(restHighLevelClient)) {
 	            try {
 	            	restHighLevelClient.close();

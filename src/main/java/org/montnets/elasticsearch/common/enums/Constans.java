@@ -40,6 +40,10 @@ public enum Constans {
       */
      public static final String COMMA_SIGN=",";
      /**
+      * null字符串
+      */
+     public static final String NULL="null";
+     /**
       * 中文逗号分隔符
       */
      public static final String COMMA_SIGN_CH="，";

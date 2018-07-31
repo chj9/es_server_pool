@@ -13,11 +13,12 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.search.sort.SortOrder;
 import org.montnets.elasticsearch.client.pool.PoolConfig;
 import org.montnets.elasticsearch.client.pool.es.EsConnectionPool;
-import org.montnets.elasticsearch.client.pool.es.RestClientFactory;
 import org.montnets.elasticsearch.common.enums.EsConnect;
+import org.montnets.elasticsearch.config.EsBasicModelConfig;
 import org.montnets.elasticsearch.config.EsConnectConfig;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
 import org.montnets.elasticsearch.entity.ScrollEntity;
+import org.montnets.elasticsearch.handle.action.IndexHandler;
 import org.montnets.elasticsearch.handle.action.InsertHandler;
 import org.montnets.elasticsearch.handle.action.SearchHandler;
 /**
@@ -58,6 +59,8 @@ public class EsTest {
 		config.setBlockWhenExhausted(true); 
 		//向调用者输出“链接”资源时，是否检测是有有效，如果无效则从连接池中移除，并尝试获取继续获取。默认为false。建议保持默认值.
 		config.setTestOnBorrow(true);
+		//把资源返回连接池时检查是否有效
+		config.setTestOnReturn(true);
 		/**************ES集群配置*******************/
 		EsConnectConfig esConnectConfig = new EsConnectConfig();
 		esConnectConfig.setClusterName("bigData-cluster");
@@ -69,18 +72,18 @@ public class EsTest {
 		RestHighLevelClient client = pool.getConnection();
 	 try {
 		/**************索引库设置以及检查创建****************/
-//		IndexHandler index = new IndexHandler(client);
-////		//新建一个索引库
-//		EsBasicModelConfig indexConfig = new EsBasicModelConfig("demo", "demo");
-////		//设置数据模版(不设置ES会自动识别)
-//		indexConfig.setMappings("{\"demo\": {\"properties\" : {\"id\": {\"type\": \"long\"}}}}");
-////		//设置索引设置(默认 5个分片,一个副本)
-//		indexConfig.setSettings("{\"number_of_shards\" :5,\"number_of_replicas\" : 1,\"refresh_interval\" : \"5s\"}");
-//		indexConfig.setMaxResultDataCount(10000);//设置最大可取多少数据,或分页能到多深的数据 默认10000(不建议设置大)
-////		//开始创建
-//		System.out.println("创建索引库:"+index.createIndex(indexConfig));
-////		//检查索引库是否存在
-//		System.out.println("检查索引库是否存在:"+index.existsIndex("demo"));
+		IndexHandler index = new IndexHandler(client);
+//		//新建一个索引库
+		EsBasicModelConfig indexConfig = new EsBasicModelConfig("demo", "demo");
+//		//设置数据模版(不设置ES会自动识别)
+		indexConfig.setMappings("{\"demo\": {\"properties\" : {\"id\": {\"type\": \"long\"}}}}");
+//		//设置索引设置(默认 5个分片,一个副本)
+		indexConfig.setSettings("{\"number_of_shards\" :5,\"number_of_replicas\" : 1,\"refresh_interval\" : \"5s\"}");
+		indexConfig.setMaxResultDataCount(10000);//设置最大可取多少数据,或分页能到多深的数据 默认10000(不建议设置大)
+//		//开始创建
+		logger.info("创建索引库:{}",index.createIndex(indexConfig));
+//		//检查索引库是否存在
+		logger.info("检查索引库是否存在:{}",index.existsIndex("demo"));
 		 /*************索引库插入示例*******************/
 			 EsRequestEntity esRequestEntity = new EsRequestEntity("demo","demo");
 			 InsertHandler insert = new InsertHandler(client, esRequestEntity);

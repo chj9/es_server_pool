@@ -126,9 +126,9 @@ public class EsConnectConfig implements Serializable{
 	}
 	public  HttpHost[] getNodes() throws IllegalAccessException {
 		if(nodes==null||nodes.length==0){
-			throw new IllegalAccessException("非法节点,nodes为："+nodes);
+			throw new IllegalAccessException("非法节点,nodes为："+Arrays.toString(nodes));
 		}
-		HttpHost ips[] = new HttpHost[nodes.length];
+		HttpHost[] ips = new HttpHost[nodes.length];
 	   	 for(int i=0;i<nodes.length;i++){
 			 try {
 	    		 String url = nodes[i];

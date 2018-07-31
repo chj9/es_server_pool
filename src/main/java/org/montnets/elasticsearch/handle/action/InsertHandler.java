@@ -13,7 +13,8 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.montnets.elasticsearch.common.util.MyTools;
+import org.montnets.elasticsearch.common.enums.Constans;
+import org.montnets.elasticsearch.common.util.PoolUtils;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
 /**
  * 
@@ -102,7 +103,7 @@ public class InsertHandler {
 				 	 if(Objects.nonNull(idField)){		
 						 id = String.valueOf(map.get(idField));
 						 //如果没有这个ID字段名则跳出不给保存
-						 if(MyTools.isEmpty(id)||"null".equals(id)){
+						 if(PoolUtils.isEmpty(id)||"null".equals(id)){
 							 continue;
 						 }
 				 	 }
@@ -150,7 +151,7 @@ public class InsertHandler {
 			}
 			 	 if(Objects.nonNull(idField)){		
 					 id = String.valueOf(map.get(idField));
-					 if(MyTools.isEmpty(id)||"null".equals(id)){
+					 if(PoolUtils.isEmpty(id)||Constans.NULL.equals(id)){
 						 throw new RuntimeException("主键必须设值!!!当前主键"+idFieldName+"="+id);
 					 }
 			 	 }

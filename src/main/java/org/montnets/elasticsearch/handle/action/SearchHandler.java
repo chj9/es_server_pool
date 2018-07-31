@@ -32,7 +32,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
-import org.montnets.elasticsearch.common.util.MyTools;
+import org.montnets.elasticsearch.common.util.PoolUtils;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
 import org.montnets.elasticsearch.entity.ScrollEntity;
 import org.montnets.elasticsearch.handle.IBasicHandle;
@@ -73,7 +73,9 @@ public class SearchHandler implements IBasicHandle{
 	  /*******排除哪些字段********/
 	  private String[] excludeFields = null;
 	  
-	  //这两个参数是获取版本和解释,官方都是默认true,我这里为了减少返回数据设置默认false,如果需要设置为true,在设置中设置即可
+	  /**
+	   * 这两个参数是获取版本和解释,官方都是默认true,我这里为了减少返回数据设置默认false,如果需要设置为true,在设置中设置即可
+	   */
 	  private boolean  version = false;
 	  private boolean  explain = false;
 	  /**
@@ -165,7 +167,7 @@ public class SearchHandler implements IBasicHandle{
 	    		searchSourceBuilder.size(esRequestEntity.getLimit());
 	    	}
 			//是否需要排序,没有则不需要
-		    if(MyTools.isNotEmpty(sortField)&&Objects.nonNull(sortOrder)){
+		    if(PoolUtils.isNotEmpty(sortField)&&Objects.nonNull(sortOrder)){
 				searchSourceBuilder.sort(new FieldSortBuilder(sortField).order(sortOrder));
 			}
 		    //设置过滤字段
@@ -199,7 +201,7 @@ public class SearchHandler implements IBasicHandle{
 	 */
 	public synchronized Map<String, Object>  sraechById(String idvalue) throws Exception{
 		Objects.requireNonNull(idvalue, "id can not null");
-		Map<String, Object> map =new HashMap<String, Object>();
+		Map<String, Object> map =new HashMap<String, Object>(16);
 		 try {
 			 GetRequest getRequest = new GetRequest(index,type,idvalue);
 		     //设置过滤字段
@@ -225,7 +227,7 @@ public class SearchHandler implements IBasicHandle{
 		 List<Map<String, Object>>  list = new ArrayList<Map<String, Object>>();
 		 String scrollId = scrollEntity.getScrollId();
 		 //首次进入
-		if(MyTools.isEmpty(scrollId)){
+		if(PoolUtils.isEmpty(scrollId)){
 			SearchRequest searchRequest = new SearchRequest(index);
 			searchSourceBuilder = new SearchSourceBuilder();
 			searchSourceBuilder.size(esRequestEntity.getLimit()); 
@@ -249,7 +251,7 @@ public class SearchHandler implements IBasicHandle{
 		     }
 		     	searchRequest.source(searchSourceBuilder);
 		     	if(Objects.nonNull(scrollEntity.getKeepAlive())){
-		     		searchRequest.scroll(TimeValue.timeValueMinutes(scrollEntity.getKeepAlive()));//数据保持多久 
+		     		searchRequest.scroll(TimeValue.timeValueMinutes(scrollEntity.getKeepAlive()));
 		     	}else{
 		     		//默认十秒
 		     		searchRequest.scroll(TimeValue.timeValueMinutes(10L));
@@ -324,7 +326,7 @@ public class SearchHandler implements IBasicHandle{
  			RestClient restClient = rhlClient.getLowLevelClient();
  			String endPoint = "/" + index + "/" + type +"/"+idvalue.trim();
  	        Response response = restClient.performRequest("HEAD",endPoint,Collections.<String, String>emptyMap());
- 	        isExists =response.getStatusLine().getReasonPhrase().equals("OK");
+ 	        isExists ="OK".equals(response.getStatusLine().getReasonPhrase());
  		} catch (IOException e) {
  			isExists=false;
  		}
@@ -348,7 +350,7 @@ public class SearchHandler implements IBasicHandle{
 			  /************如果是脚本查询将是另外一个取值方法***************/
 			  if(Objects.nonNull(script)){
 				    	map = hit.getFields();
-				    	Map<String, Object> mapScript = new HashMap<>();
+				    	Map<String, Object> mapScript = new HashMap<>(16);
 				    	Object value = map.get(scriptName).getValue();
 				    	mapScript.put(scriptName,value);
 				    	list.add(mapScript);

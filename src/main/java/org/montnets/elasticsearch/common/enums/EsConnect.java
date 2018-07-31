@@ -59,11 +59,11 @@ public enum EsConnect {
      */
     
     /**
-     * 路由连接的最大数
+     * 路由连接的最大数，实际的单个连接池大小，如tps定为50，那就配置50
      */
-    public static final int DEFAULT_MAX_CONN_PER_ROUTE = 10;//实际的单个连接池大小，如tps定为50，那就配置50
+    public static final int DEFAULT_MAX_CONN_PER_ROUTE = 10;
     /**
-     * 连接池的大小
+     * 连接池的大小,最大不要超过1000
      */
-    public static final int DEFAULT_MAX_CONN_TOTAL = 30;//最大不要超过1000
+    public static final int DEFAULT_MAX_CONN_TOTAL = 30;
 }

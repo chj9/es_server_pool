@@ -30,7 +30,7 @@ public class ScrollEntity<T> implements Serializable{
 	private static final long serialVersionUID = 1L;
    
 	/*****响应数据集  不能主动设置*******/
-	private List<T> dataList = null;//响应数据集
+	private List<T> dataList = null;
 	/*****滚动数据时候产生的游标ID 不能主动设置*******/
 	private String scrollId;
 	/***游标ID在不使用后保持激活多久  单位 秒***/

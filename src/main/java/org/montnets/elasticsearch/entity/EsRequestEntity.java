@@ -28,11 +28,11 @@ public class EsRequestEntity implements Serializable{
 	/***索引库类表 ES7.0后删除***/
 	private String type;
 	/***当前页****/
-	private int pageNo = 1;//
+	private int pageNo = 1;
 	/***每页数据****/
-	private int pageSize = 10;//
+	private int pageSize = 10;
 	/***是否需要分页,默认禁止分页****/
-	private boolean needPaging = false;//
+	private boolean needPaging = false;
 	/*****滚动取数据的时候单次取多少,默认一次1000*******/
 	private int limit=1000;
 	/*******本次请求条件数据总数*********/
@@ -81,7 +81,9 @@ public class EsRequestEntity implements Serializable{
 	}
 	public void setPageNo(int pageNo){
 		    this.pageNo = pageNo;
-		    if (pageNo < 1)this.pageNo = 1;
+		    if (pageNo < 1){
+		    	this.pageNo = 1;
+		    }
 	}
 	 public int getPageSize(){
 		 return this.pageSize;

@@ -48,7 +48,7 @@ public class IndexHandler{
 		try {
 			RestClient restClient = client.getLowLevelClient();
 	        Response response = restClient.performRequest("HEAD","/"+index,Collections.<String, String>emptyMap());
-	        isExists =response.getStatusLine().getReasonPhrase().equals("OK");
+	        isExists ="OK".equals(response.getStatusLine().getReasonPhrase());
 		} catch (IOException e) {
 			logger.error("检查INDEX是否存在报错",e);
 			isExists=false;

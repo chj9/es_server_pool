@@ -99,7 +99,7 @@ public class AggregationHandler implements IBasicHandle{
 	private Map<String,Object> map =null;
 	private synchronized  List<Map<String, Object>>  sraechEsAgg(String countField) throws Exception{
 		listmap= new ArrayList<Map<String,Object>>();
-		map= new HashMap<String,Object>();
+		map= new HashMap<String,Object>(16);
 		 try {
 			 SearchRequest searchRequest = new SearchRequest(index); 
 			 searchRequest.types(type);
@@ -206,7 +206,7 @@ public class AggregationHandler implements IBasicHandle{
 	 * @return
 	 */
 	private Map<String,Object> clonMap(Map<String,Object> mapTo){
-		Map<String,Object> map = new HashMap<String,Object>();
+		Map<String,Object> map = new HashMap<String,Object>(16);
 		for (Map.Entry<String,Object> entry : mapTo.entrySet()) {
 			String key = entry.getKey();
 			Object value = entry.getValue();

@@ -5,6 +5,8 @@ package org.montnets.elasticsearch.common.util;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.montnets.elasticsearch.common.enums.Constans;
 /**
  * 
 * Copyright: Copyright (c) 2018 Montnets
@@ -39,11 +41,11 @@ public class IpHandler {
             host = matcher.group() ;  
         }  
         // 如果  
-        if(host.contains(":") == false){  
+        if(host.contains(Constans.TIME_SEPARATOR) == false){  
         	this.ip=host;
         	this.port=80;
         }else{ 
-        	String[] ipPortArr = host.split(":");  
+        	String[] ipPortArr = host.split(Constans.TIME_SEPARATOR);  
         	this.ip=ipPortArr[0];
         	this.port=Integer.valueOf(ipPortArr[1].trim());
         }

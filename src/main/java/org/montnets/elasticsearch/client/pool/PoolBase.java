@@ -27,7 +27,12 @@ import org.montnets.elasticsearch.common.exception.ConnectionException;
 * 2018年7月30日     chenhj          v1.0.0               修改原因
  */
 public abstract class PoolBase<T> implements Closeable, Serializable {
-
+	/********激活数***********/
+	private int numActive;
+	/*********空闲数*************/
+	private int numIdle;
+	/*********最大连接数*************/
+	private int maxTotal;
     /**
      * serialVersionUID
      */
@@ -64,8 +69,9 @@ public abstract class PoolBase<T> implements Closeable, Serializable {
      */
     protected void initPool(final GenericObjectPoolConfig<T> poolConfig,
                             PooledObjectFactory<T> factory) {
-        if (this.internalPool != null)
-            this.destroy();
+        if (this.internalPool != null){
+        	this.destroy();
+        }
         this.internalPool = new GenericObjectPool<T>(factory, poolConfig);
     }
     /**
@@ -83,10 +89,14 @@ public abstract class PoolBase<T> implements Closeable, Serializable {
      */
     protected T getResource() {
         try {
+        	this.maxTotal=internalPool.getMaxTotal();
+        	this.numActive=internalPool.getNumActive();
+        	this.numIdle=internalPool.getNumIdle();
             return internalPool.borrowObject();
         } catch (Exception e) {
             throw new ConnectionException(
-                    "Could not get a resource from the pool", e);
+                    "Could not get a resource from the pool!"
+                    + "Current connection:"+numActive+",Free connection:"+numIdle+",Pool Max connection:"+maxTotal, e);
         }
     }
 
@@ -97,13 +107,14 @@ public abstract class PoolBase<T> implements Closeable, Serializable {
      * @param resource 池对象
      */
     protected void returnResource(final T resource) {
-        if (null != resource)
+        if (null != resource){
             try {
                 internalPool.returnObject(resource);
             } catch (Exception e) {
                 throw new ConnectionException(
                         "Could not return the resource to the pool", e);
             }
+        }
     }
 
     /**
@@ -113,13 +124,14 @@ public abstract class PoolBase<T> implements Closeable, Serializable {
      * @param resource 池对象
      */
     protected void invalidateResource(final T resource) {
-        if (null != resource)
+        if (null != resource){
             try {
                 internalPool.invalidateObject(resource);
             } catch (Exception e) {
                 throw new ConnectionException(
                         "Could not invalidate the resource to the pool", e);
             }
+        }
     }
 
     /**
@@ -254,6 +266,7 @@ public abstract class PoolBase<T> implements Closeable, Serializable {
      * <p>Title: close</p>
      * <p>Description: 关闭对象池</p>
      */
+    @Override
     public void close() {
         try {
             this.internalPool.close();

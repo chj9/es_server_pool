@@ -40,7 +40,6 @@ import org.montnets.elasticsearch.handle.IBasicHandle;
 * 2018年6月14日     chenhj          v1.0.0               修改原因
  */
 public class DeleteHandler implements IBasicHandle{
-	//private static Logger logger = LogManager.getLogger(DeleteHandler.class);
 	  private String index;
 	  private String type;	  
 	  private RestHighLevelClient rhlClient;
@@ -127,7 +126,7 @@ class RecordDeleteLog implements Runnable{
 	private String command;
 	private HttpEntity entity;
 	private RestClient restClient;
-	private String LogStr;
+	private String logStr;
 	public void setCommand(String command) {
 		this.command = command;
 	}
@@ -138,7 +137,7 @@ class RecordDeleteLog implements Runnable{
 		this.restClient = restClient;
 	}
 	public void setLogStr(String logStr) {
-		LogStr = logStr;
+		this.logStr = logStr;
 	}
 	@Override
 	public void run() {
@@ -146,12 +145,12 @@ class RecordDeleteLog implements Runnable{
 			Response response = restClient.performRequest("POST", command,Collections.<String, String> emptyMap(),entity);
 			boolean status = response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
 			if(status){
-				logger.info("删除成功...删除查询语句:{}",LogStr);
+				logger.info("删除成功...删除查询语句:{}",logStr);
 			}else{
-				logger.error("删除失败...删除查询语句:{}",LogStr);
+				logger.error("删除失败...删除查询语句:{}",logStr);
 			}
 		} catch (IOException e) {
-			logger.error("删除出异常,如果是超时异常则无需处理...删除查询语句:{},异常:{}",LogStr,e);
+			logger.error("删除出异常,如果是超时异常则无需处理...删除查询语句:{},异常:{}",logStr,e);
 		}
 	}
 }
