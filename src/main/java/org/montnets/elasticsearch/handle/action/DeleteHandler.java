@@ -10,6 +10,8 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NStringEntity;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.client.Response;
@@ -20,8 +22,6 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
 import org.montnets.elasticsearch.handle.IBasicHandle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -40,14 +40,14 @@ import org.slf4j.LoggerFactory;
 * 2018年6月14日     chenhj          v1.0.0               修改原因
  */
 public class DeleteHandler implements IBasicHandle{
-	  
+	//private static Logger logger = LogManager.getLogger(DeleteHandler.class);
 	  private String index;
 	  private String type;	  
 	  private RestHighLevelClient rhlClient;
 	  private	QueryBuilder queryBuilder;
 	  private SearchSourceBuilder searchSourceBuilder;
 	  private boolean isSync = false;
-	public DeleteHandler(RestHighLevelClient rhlClient,EsRequestEntity<?> entity){
+	public DeleteHandler(RestHighLevelClient rhlClient,EsRequestEntity entity){
 		this.index=Objects.requireNonNull(entity.getIndex(),"index can not null");
 		this.type =Objects.requireNonNull(entity.getType(),"type can not null");
 		this.rhlClient=rhlClient;
@@ -123,7 +123,7 @@ public class DeleteHandler implements IBasicHandle{
 * @Description: 异步写删除日志的方法
 */
 class RecordDeleteLog implements Runnable{
-	private static final Logger LOG = LoggerFactory.getLogger(RecordDeleteLog.class);
+	private static Logger logger = LogManager.getLogger(RecordDeleteLog.class);
 	private String command;
 	private HttpEntity entity;
 	private RestClient restClient;
@@ -146,12 +146,12 @@ class RecordDeleteLog implements Runnable{
 			Response response = restClient.performRequest("POST", command,Collections.<String, String> emptyMap(),entity);
 			boolean status = response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
 			if(status){
-				LOG.info("删除成功...删除查询语句:{}",LogStr);
+				logger.info("删除成功...删除查询语句:{}",LogStr);
 			}else{
-				LOG.error("删除失败...删除查询语句:{}",LogStr);
+				logger.error("删除失败...删除查询语句:{}",LogStr);
 			}
 		} catch (IOException e) {
-			LOG.error("删除出异常,如果是超时异常则无需处理...删除查询语句:{},异常:{}",LogStr,e);
+			logger.error("删除出异常,如果是超时异常则无需处理...删除查询语句:{},异常:{}",LogStr,e);
 		}
 	}
 }

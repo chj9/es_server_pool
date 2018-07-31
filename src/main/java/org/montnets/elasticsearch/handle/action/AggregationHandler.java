@@ -51,7 +51,7 @@ public class AggregationHandler implements IBasicHandle{
 	  private String count ="count";
 	  private SearchSourceBuilder searchSourceBuilder;
 	  private  AggregationBuilder aggregationBuilder;
-   	  public AggregationHandler(RestHighLevelClient rhlClient,EsRequestEntity<?> entity){
+   	  public AggregationHandler(RestHighLevelClient rhlClient,EsRequestEntity entity){
 		this.index=Objects.requireNonNull(entity.getIndex(),"index can not null");
 		this.type =Objects.requireNonNull(entity.getType(),"type can not null");
 		this.rhlClient=rhlClient;

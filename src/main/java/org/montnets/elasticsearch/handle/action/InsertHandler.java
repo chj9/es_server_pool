@@ -1,7 +1,11 @@
 package org.montnets.elasticsearch.handle.action;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -11,8 +15,6 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.montnets.elasticsearch.common.util.MyTools;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 /**
  * 
 * Copyright: Copyright (c) 2018 Montnets
@@ -42,12 +44,10 @@ public class InsertHandler {
 	  private List<String> listFailuresData =null;
 	  /*****ID字段名*******/
 	  private String idFieldName=null;
-	  private static final Logger LOG = LoggerFactory.getLogger(InsertHandler.class);
-	public InsertHandler(RestHighLevelClient rhlClient,EsRequestEntity<?> esRequestEntity){
-		this.index=esRequestEntity.getIndex();
-		Objects.requireNonNull(index, "index can not null");
-		this.type =esRequestEntity.getType();
-		Objects.requireNonNull(type, "type can not null");
+	  private static final Logger LOG = LogManager.getLogger(InsertHandler.class);
+	public InsertHandler(RestHighLevelClient rhlClient,EsRequestEntity esRequestEntity){
+		this.index=Objects.requireNonNull(esRequestEntity.getIndex(), "index can not null");
+		this.type =Objects.requireNonNull(esRequestEntity.getType(), "type can not null");		
 		this.rhlClient=rhlClient;
 	}
 	/**
@@ -69,18 +69,16 @@ public class InsertHandler {
 		return this;
 	}
 	public  boolean insertBulk(List<Map<String,Object>> list) throws Exception{
-		Objects.requireNonNull(list, "list can not null");
 		if(docAsUpsert&&Objects.isNull(idFieldName)){
 			throw new NullPointerException("如果是设置docAsUpsert为true,则idField必须存在");
 		}
-		return insert(list,idFieldName);
+		return insert(Objects.requireNonNull(list, "list can not null"),idFieldName);
 	}
 	public  boolean insertOne(Map<String,Object> map) throws Exception{
-		Objects.requireNonNull(map, "map can not null");
 		if(docAsUpsert&&Objects.isNull(idFieldName)){
 			throw new NullPointerException("如果是设置docAsUpsert为true,则idField必须存在");
 		}
-		return insert(map,idFieldName);
+		return insert(Objects.requireNonNull(map, "map can not null"),idFieldName);
 	}
 	/**
 	 * 批量插入ES库
@@ -97,8 +95,13 @@ public class InsertHandler {
 	    	 @SuppressWarnings("unchecked")
 			List<Map<String,Object>> list = (List<Map<String, Object>>) dataObj;
 			 for(Map<String,Object> map:list){
+				    //如果数据为空或者null则跳过
+				 	if(Objects.isNull(map)||!map.isEmpty()){
+				 		continue;
+				 	}
 				 	 if(Objects.nonNull(idField)){		
 						 id = String.valueOf(map.get(idField));
+						 //如果没有这个ID字段名则跳出不给保存
 						 if(MyTools.isEmpty(id)||"null".equals(id)){
 							 continue;
 						 }
@@ -122,6 +125,7 @@ public class InsertHandler {
 				 BulkResponse bulkResponse = rhlClient.bulk(request);
 				 //响应失败的数据过来写入日志
 				 if(bulkResponse.hasFailures()){
+					 listFailuresData = new ArrayList<String>();
 					 for (BulkItemResponse bulkItemResponse : bulkResponse) {
 						    if (bulkItemResponse.isFailed()) { 
 						        BulkItemResponse.Failure failure = bulkItemResponse.getFailure(); 
@@ -138,8 +142,12 @@ public class InsertHandler {
 			 }
 	     /************单条插入**************/		 
 	     }else if(dataObj instanceof Map){
-	    	 @SuppressWarnings("unchecked")
+	    	@SuppressWarnings("unchecked")
 			Map<String, Object> map = (Map<String, Object>) dataObj;
+			//如果数据为空或者null则跳过
+			if(Objects.isNull(map)||!map.isEmpty()){
+			 	return false;
+			}
 			 	 if(Objects.nonNull(idField)){		
 					 id = String.valueOf(map.get(idField));
 					 if(MyTools.isEmpty(id)||"null".equals(id)){

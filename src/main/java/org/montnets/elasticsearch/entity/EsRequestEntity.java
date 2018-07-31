@@ -2,7 +2,6 @@ package org.montnets.elasticsearch.entity;
 
 
 import java.io.Serializable;
-import java.util.List;
 /**
  * 
 * Copyright: Copyright (c) 2018 Montnets
@@ -19,7 +18,7 @@ import java.util.List;
 *---------------------------------------------------------*
 * 2018年7月27日     chenhj          v1.0.0               修改原因
  */
-public class EsRequestEntity<T> implements Serializable{
+public class EsRequestEntity implements Serializable{
 	
 	private static final long serialVersionUID = 1L;
 	/***索引库***/
@@ -31,17 +30,14 @@ public class EsRequestEntity<T> implements Serializable{
 	/***当前页****/
 	private int pageNo = 1;//
 	/***每页数据****/
-	private int pageSize = 1000;//
+	private int pageSize = 10;//
 	/***是否需要分页,默认禁止分页****/
 	private boolean needPaging = false;//
 	/*****滚动取数据的时候单次取多少,默认一次1000*******/
 	private int limit=1000;
-	/*****响应数据集*******/
-	private List<T> responseDataList = null;//响应数据集
 	/*******本次请求条件数据总数*********/
 	private long totalCount = -1L;
-	/*****滚动数据时候产生的游标ID*******/
-	private String scrollId;
+
    
 
 	public String getType() {
@@ -50,24 +46,11 @@ public class EsRequestEntity<T> implements Serializable{
 	public void setType(String type) {
 		this.type = type;
 	}
-	
-	public List<T> getResponseDataList() {
-		return responseDataList;
-	}
-	public void setResponseDataList(List<T> responseDataList) {
-		this.responseDataList = responseDataList;
-	}
 	public long getTotalCount() {
 		return totalCount;
 	}
 	public void setTotalCount(long totalCount) {
 		this.totalCount = totalCount;
-	}
-	public String getScrollId() {
-		return scrollId;
-	}
-	public void setScrollId(String scrollId) {
-		this.scrollId = scrollId;
 	}
 	public int getPageNo() {
 		return pageNo;
@@ -118,4 +101,11 @@ public class EsRequestEntity<T> implements Serializable{
 	public void setNeedPaging(boolean needPaging) {
 			this.needPaging = needPaging;
 	}
+	@Override
+	public String toString() {
+		return "EsRequestEntity [index=" + index + ", idFieldName=" + idFieldName + ", type=" + type + ", pageNo="
+				+ pageNo + ", pageSize=" + pageSize + ", needPaging=" + needPaging + ", limit=" + limit
+				+ ", totalCount=" + totalCount + "]";
+	}
+	
 }

@@ -34,6 +34,7 @@ import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.montnets.elasticsearch.common.util.MyTools;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
+import org.montnets.elasticsearch.entity.ScrollEntity;
 import org.montnets.elasticsearch.handle.IBasicHandle;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -64,18 +65,22 @@ public class SearchHandler implements IBasicHandle{
 	  /**********排序方法************/
 	  private SortOrder sortOrder;
 	  /********数据集合体*********/
-	  private EsRequestEntity<?> esRequestEntity;
+	  private EsRequestEntity esRequestEntity;
 	  private Script script=null;
 	  private String scriptName;
 	  /*******只要哪些字段********/
 	  private String[] includeFields =null;
 	  /*******排除哪些字段********/
 	  private String[] excludeFields = null;
+	  
+	  //这两个参数是获取版本和解释,官方都是默认true,我这里为了减少返回数据设置默认false,如果需要设置为true,在设置中设置即可
+	  private boolean  version = false;
+	  private boolean  explain = false;
 	  /**
 	   * 只有在执行一次查询之后才会有总数,与搜索请求匹配的总命中数。
 	   */
 	  private long totalCount;
-	  public SearchHandler(RestHighLevelClient rhlClient,EsRequestEntity<?> esRequestEntity){
+	  public SearchHandler(RestHighLevelClient rhlClient,EsRequestEntity esRequestEntity){
 		Objects.requireNonNull(rhlClient, "RestHighLevelClient can not null");
 		Objects.requireNonNull(esRequestEntity, "EsRequestEntity can not null");
 		this.index=esRequestEntity.getIndex();
@@ -126,7 +131,16 @@ public class SearchHandler implements IBasicHandle{
 		 this.includeFields=includeFields;
 		 return this;
 	 }
-	 /**
+	 
+	 public SearchHandler setVersion(boolean version) {
+		this.version = version;
+		return this;
+	}
+	public SearchHandler setExplain(boolean explain) {
+		this.explain = explain;
+		return this;
+	}
+	/**
 	  * 数据转为map后返回
 	  * @return
 	  * @throws Exception
@@ -162,9 +176,9 @@ public class SearchHandler implements IBasicHandle{
 				 searchSourceBuilder.scriptField(scriptName, script);
 			 }
 			 //不需要解释
-			 searchSourceBuilder.explain(false);
+			 searchSourceBuilder.explain(explain);
 			 //不需要版本号
-			 searchSourceBuilder.version(false);
+			 searchSourceBuilder.version(version);
 		     //是否有自定义条件
 		     if(Objects.nonNull(queryBuilder)){
 		    	 searchSourceBuilder.query(queryBuilder); 
@@ -207,10 +221,10 @@ public class SearchHandler implements IBasicHandle{
 	 * @return
 	 * @throws IOException
 	 */
-	public synchronized EsRequestEntity<Map<String, Object>> searchScroll() throws IOException{
+	public synchronized ScrollEntity<Map<String, Object>> searchScroll(ScrollEntity<Map<String, Object>> scrollEntity) throws IOException{
 		 List<Map<String, Object>>  list = new ArrayList<Map<String, Object>>();
-		 String scrollId = esRequestEntity.getScrollId();
-		//首次进入
+		 String scrollId = scrollEntity.getScrollId();
+		 //首次进入
 		if(MyTools.isEmpty(scrollId)){
 			SearchRequest searchRequest = new SearchRequest(index);
 			searchSourceBuilder = new SearchSourceBuilder();
@@ -219,24 +233,32 @@ public class SearchHandler implements IBasicHandle{
 			 if(Objects.nonNull(includeFields)||Objects.nonNull(excludeFields)){
 				 searchSourceBuilder.fetchSource(includeFields,excludeFields);
 			 }
+			 //脚本遍历
+			 if(Objects.nonNull(script)){
+				 searchSourceBuilder.scriptField(scriptName, script);
+			 }
 			 //测试用
 			// searchSourceBuilder.profile(true);
 			 //不需要解释
-			 searchSourceBuilder.explain(false);
+			 searchSourceBuilder.explain(explain);
 			 //不需要版本号
-			 searchSourceBuilder.version(false);
+			 searchSourceBuilder.version(version);
 		     //是否有自定义条件
 		     if(Objects.nonNull(queryBuilder)){
 		    	 searchSourceBuilder.query(queryBuilder);      
 		     }
 		     	searchRequest.source(searchSourceBuilder);
-		     	searchRequest.scroll(TimeValue.timeValueMinutes(10));//数据保持多久 
+		     	if(Objects.nonNull(scrollEntity.getKeepAlive())){
+		     		searchRequest.scroll(TimeValue.timeValueMinutes(scrollEntity.getKeepAlive()));//数据保持多久 
+		     	}else{
+		     		//默认十秒
+		     		searchRequest.scroll(TimeValue.timeValueMinutes(10L));
+		     	}
 		     	SearchResponse searchResponse = rhlClient.search(searchRequest);
 		     	scrollId = searchResponse.getScrollId(); 
 		     	SearchHits hits = searchResponse.getHits();
-		    for (SearchHit hit : hits) {
-		    	 list.add(hit.getSourceAsMap());
-		    }
+		     	//转换
+		     	list=hitsToList(hits);
 		}
 		//非首次进入
 		else{
@@ -244,15 +266,13 @@ public class SearchHandler implements IBasicHandle{
 			scrollRequest.scroll(TimeValue.timeValueMinutes(1));
 			SearchResponse searchScrollResponse = rhlClient.searchScroll(scrollRequest);
 			SearchHits hits = searchScrollResponse.getHits(); 
-		    for (SearchHit hit : hits) {
-		    	 list.add(hit.getSourceAsMap());
-		    }
+	     	//转换
+	     	list=hitsToList(hits);
 			scrollId = searchScrollResponse.getScrollId();  
 		}
-		EsRequestEntity<Map<String, Object>> esBeanTemp = new EsRequestEntity<>();
-		esBeanTemp.setScrollId(scrollId);
-		esBeanTemp.setResponseDataList(list);
-		return esBeanTemp; 
+		scrollEntity.setScrollId(scrollId);
+		scrollEntity.setDataList(list);
+		return scrollEntity; 
 	}
 	/**
 	 * 清除滚动ID

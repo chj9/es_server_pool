@@ -5,16 +5,15 @@ import java.util.Objects;
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NStringEntity;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.montnets.elasticsearch.client.pool.es.RestClientFactory;
 import org.montnets.elasticsearch.config.EsBasicModelConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**   
 * Copyright: Copyright (c) 2018 Montnets
@@ -32,7 +31,7 @@ import org.slf4j.LoggerFactory;
 * 2018年7月26日     chenhj          v1.0.0               修改原因
 */
 public class IndexHandler{
-	private static final Logger logger = LoggerFactory.getLogger(RestClientFactory.class);
+	private static Logger logger = LogManager.getLogger(IndexHandler.class);
 	private RestHighLevelClient client;
 	public IndexHandler(RestHighLevelClient client){
 		this.client = client;

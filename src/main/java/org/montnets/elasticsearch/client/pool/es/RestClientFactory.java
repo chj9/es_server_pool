@@ -6,14 +6,14 @@ import java.util.Objects;
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig.Builder;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestClientBuilder.HttpClientConfigCallback;
 import org.elasticsearch.client.RestClientBuilder.RequestConfigCallback;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.montnets.elasticsearch.common.enums.EsConnect;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 /**  
  * @Title:  RestClient.java   
  * @Description:  TODO(用一句话描述该文件做什么)  
@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
  * @version V1.0 
  */
 public class RestClientFactory {
-		private static final Logger logger = LoggerFactory.getLogger(RestClientFactory.class);
+		private static Logger logger = LogManager.getLogger(RestClientFactory.class);
 	 	public  int CONNECT_TIMEOUT_MILLIS = EsConnect.DEFAULT_CONNECT_TIMEOUT_MILLIS;//连接时间
 	    public  int SOCKET_TIMEOUT_MILLIS = EsConnect.DEFAULT_SOCKET_TIMEOUT_MILLIS;//等待时间
 	    public  int CONNECTION_REQUEST_TIMEOUT_MILLIS = EsConnect.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS;
