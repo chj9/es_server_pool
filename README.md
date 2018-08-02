@@ -2,19 +2,10 @@
 版本	修改日期	修改人	修改项	备注
 V1.0	2018-08-01	陈洪杰	初稿	
 # 一、项目背景
-	 目前公司多个项目在使用elasticsearch，每套项目都写一套连接比较麻烦，而且也不好管理,所以将公共代码抽离出来，还有一些公共的操作抽离出来打成jar包。
-
-
+目前公司多个项目在使用elasticsearch，每套项目都写一套连接比较麻烦，而且也不好管理,所以将公共代码抽离出来，还有一些公共的操作抽离出来打成jar包。
 
 # 二、项目实现
-    项目依赖于elasticsearch官方的rest-high-level-client客户端和common-pool2的对象池技术.将es客户端封装到对象池中.
-连接池架构
-连接池架构图如下:
- 
-从以上的架构图中可以得出:
-1、使用者发出获取对象资源的请求
-2、池收到请求，激活对象，并且验证资源的有效性
-3、使用者使用完对象资源返还给池中，并且验证该资源对象是否还有效，钝化对象，存入池中等待下次借出.
+项目依赖于elasticsearch官方的rest-high-level-client客户端和common-pool2的对象池技术.将es客户端封装到对象池中.
 程序流程
 # 三、使用方法
 初始化连接池
@@ -50,7 +41,7 @@ esConnectConfig.setNodes(nodes);
 esConnectConfig.setScheme(EsConnect.HTTP);
 ```
 3、自定义ES网络配置(可选)
-   因为有时候业务的需要我们需要对ES去连接集群时进行一些设置,当然这些都是可不配置的，不配置的时候都会选默认值
+因为有时候业务的需要我们需要对ES去连接集群时进行一些设置,当然这些都是可不配置的，不配置的时候都会选默认值
 ```
 //设置连接超时时间 默认值为:1000毫秒
 esConnectConfig.setConnectTimeoutMillis(1000);
@@ -61,18 +52,18 @@ esConnectConfig.setSocketTimeoutMillis(30000);
 //设置ES响应超时时间 默认:30秒
 esConnectConfig.setMaxRetryTimeoutMillis(30000);
 ```
-    这些配置主要就是对客户端去请求集群时候的网络设置,注意,有时候索引库数据大的时候往往需要响应时间久,这个时候我们就可以设置ES响应超时时间，但需要注意的是如果设置ES响应超时时间也需要设置网络超时时间,并且最好保证MaxRetryTimeoutMillis<=SocketTimeoutMillis
+这些配置主要就是对客户端去请求集群时候的网络设置,注意,有时候索引库数据大的时候往往需要响应时间久,这个时候我们就可以设置ES响应超时时间，但需要注意的是如果设置ES响应超时时间也需要设置网络超时时间,并且最好保证MaxRetryTimeoutMillis<=SocketTimeoutMillis
 4、初始化连接池
 ```
 //把连接池配置和ES集群配置加载进池中
 EsConnectionPool pool = new EsConnectionPool(config, esConnectConfig);
 ```
 5、设置全局池对象
-    设置全局对象池,初始化到此结束
+设置全局对象池,初始化到此结束
 //设为程序全局可用这个连接池
 EsPool.ESCLIENT.setPool(pool);
 ## 四、ES操作索引库
-     因为在该jar包中还内置了一部分对索引库的操作的包装处理,其中包括，对索引库的创建库设置，对数据的新增(单条新增,批量新增)、修改、删除、聚合查询、滚动查询、分页查询。这些方法都是对ES原官方jar包的封装，使这些操作变得简单易使用。也可不用这些处理器自行使用官方的接口。这里我们都是以index为demo,type为demo进行操作
+因为在该jar包中还内置了一部分对索引库的操作的包装处理,其中包括，对索引库的创建库设置，对数据的新增(单条新增,批量新增)、修改、删除、聚合查询、滚动查询、分页查询。这些方法都是对ES原官方jar包的封装，使这些操作变得简单易使用。也可不用这些处理器自行使用官方的接口。这里我们都是以index为demo,type为demo进行操作
 注意:每个处理函数都必须先实现builder方法才可使用,使用完成必须close
 ### 1、对index操作
 ```
@@ -97,7 +88,7 @@ logger.info("检查索引库是否存在:{}",index.existsIndex("demo"));
       index.close();
 }
 ```
-    如上面一样,其中数据模板就是类似我们数据库对没一个字段名参数的类型,只不过这里以json文件形式传入索引中，建议设置数据模板。而setting则是设置这个索引有多少分片和副本，如果数据不大都取默认值即可。
+ 如上面一样,其中数据模板就是类似我们数据库对没一个字段名参数的类型,只不过这里以json文件形式传入索引中，建议设置数据模板。而setting则是设置这个索引有多少分片和副本，如果数据不大都取默认值即可。
 mapping的数据模板设置参考官方这个连接
 https://www.elastic.co/guide/en/elasticsearch/reference/6.3/mapping-types.html
 
@@ -130,9 +121,9 @@ try {
    insert.close();
 }
 ```
-    插入支持是否开始存在更新不存在插入、自动生成ID,如果开启自动生成ID,如果批量插入失败将会把失败的数据存到ListFailuresData中，如果这个值为空，那就是没有保存失败的数据.
+插入支持是否开始存在更新不存在插入、自动生成ID,如果开启自动生成ID,如果批量插入失败将会把失败的数据存到ListFailuresData中，如果这个值为空，那就是没有保存失败的数据.
 ### 3、查询数据
-    查询输入条件查询数据,可以指定返回多少条数据和排序这些功能
+查询输入条件查询数据,可以指定返回多少条数据和排序这些功能
 ```
 //设置获取多少条数据,默认1000条
 esRequestEntity.setLimit(1000);
@@ -293,9 +284,9 @@ POST  mt_msg/mt_msg/_update_by_query?conflicts=proceed
 },"query":{"bool":{"must":[{"term":{"msgcode":{"value":0,"boost":1.0}}}] ,"adjust_pure_negative":true,"boost":1.0}}}
 ### 5、删除数据
 数据的删除操作代码如下
+```
 EsRequestEntity esRequestEntity = new EsRequestEntity("demo","demo");
 /************数据删除*************/
-```
 DeleteEsHandler del = new DeleteEsHandler();
 try {
   //设置条件
@@ -313,7 +304,7 @@ try {
   del.close();
 }
 ```
-    在删除数据量大时尽量使用异步删除,因为ES集群收到删除命令后就算超时没有响应出来，该命令还是会在后台执行的,我们可以使用以下命令在kibana平台中看到正在执行的删除线程，并且可以看到执行到哪里。
+在删除数据量大时尽量使用异步删除,因为ES集群收到删除命令后就算超时没有响应出来，该命令还是会在后台执行的,我们可以使用以下命令在kibana平台中看到正在执行的删除线程，并且可以看到执行到哪里。
 ##查看正在进行的删除任务
 GET _tasks?detailed=true&actions=*/delete/byquery
 如果删除过程中需要停止删除线程,可以使用以下命令进行停止.但已删除的数据不会回滚.
@@ -321,7 +312,7 @@ GET _tasks?detailed=true&actions=*/delete/byquery
 POST _tasks/yXFoabQLSJidu-MrLX4lLQ:2229/_cancel
 
 ## 五、条件设置
-    因为ES官方给的条件设置比较多，比较繁杂，但往往我们只需要其中一两个,这里我抽离大于gt,大于等于gte,小于lt,小于等于lte,等于equal,不等于unequal,字段存在exist,字段不存在unexist。八个维度的与或查询
+因为ES官方给的条件设置比较多，比较繁杂，但往往我们只需要其中一两个,这里我抽离大于gt,大于等于gte,小于lt,小于等于lte,等于equal,不等于unequal,字段存在exist,字段不存在unexist。八个维度的与或查询
 ```
 ConditionLogic con = new ConditionLogic()
 //*******以下开始设置条件**********/
@@ -363,7 +354,7 @@ System.out.println("打印生成的查询JSON："+con.toDSL());
 ```
 得到queryBuilder对象可以在处理器中setQueryBuilder(queryBuilder)进行设置
 ## 六、关闭处理器或返还对象
-     注意,在每个使用完成之后要及时关闭处理器,防止造成程序堵塞，如果正常执行那么将对象还回池中这一行也是能正常执行的。然而，如果使用对象的过程中发生了异常，那么就不能保证对象能还回池中了。因此，就出现了池中对象只有借没有还的问题。对异常的解决办法当然是实用try...catch...finally来捕获
+注意,在每个使用完成之后要及时关闭处理器,防止造成程序堵塞，如果正常执行那么将对象还回池中这一行也是能正常执行的。然而，如果使用对象的过程中发生了异常，那么就不能保证对象能还回池中了。因此，就出现了池中对象只有借没有还的问题。对异常的解决办法当然是实用try...catch...finally来捕获
 //归还一个连接
 ```
 try {
