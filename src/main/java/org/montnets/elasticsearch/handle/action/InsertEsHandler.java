@@ -13,9 +13,12 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.montnets.elasticsearch.client.EsPool;
+import org.montnets.elasticsearch.client.pool.es.EsConnectionPool;
 import org.montnets.elasticsearch.common.enums.Constans;
 import org.montnets.elasticsearch.common.util.PoolUtils;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
+import org.montnets.elasticsearch.handle.IBasicHandler;
 /**
  * 
 * Copyright: Copyright (c) 2018 Montnets
@@ -32,7 +35,7 @@ import org.montnets.elasticsearch.entity.EsRequestEntity;
 *---------------------------------------------------------*
 * 2018年6月12日     chenhj          v1.0.0               修改原因
  */
-public class InsertHandler {
+public class InsertEsHandler implements IBasicHandler{
 	  /**索引库*/
 	  private String index;
 	  /**索引表*/
@@ -45,18 +48,23 @@ public class InsertHandler {
 	  private List<String> listFailuresData =null;
 	  /*****ID字段名*******/
 	  private String idFieldName=null;
-	  private static final Logger LOG = LogManager.getLogger(InsertHandler.class);
-	public InsertHandler(RestHighLevelClient rhlClient,EsRequestEntity esRequestEntity){
-		this.index=Objects.requireNonNull(esRequestEntity.getIndex(), "index can not null");
-		this.type =Objects.requireNonNull(esRequestEntity.getType(), "type can not null");		
-		this.rhlClient=rhlClient;
-	}
+	  /*********对象池*******************/
+	  private EsConnectionPool pool = null;
+	  private static final Logger LOG = LogManager.getLogger(InsertEsHandler.class);
+  	@Override
+  	public void builder(EsRequestEntity esRequestEntity){
+  		Objects.requireNonNull(esRequestEntity, "EsRequestEntity can not null");
+  		this.index=Objects.requireNonNull(esRequestEntity.getIndex(), "index can not null");
+  		this.type =Objects.requireNonNull(esRequestEntity.getType(), "type can not null");
+		this.pool=EsPool.ESCLIENT.getPool();
+		this.rhlClient=pool.getConnection();
+  	}
 	/**
 	 * 设置是否存在更新不存在插入
 	 * @param docAsUpsert true：存在更新不存在插入  false:数据直接覆盖    默认为false
 	 * @return
 	 */
-	public InsertHandler docAsUpsert(boolean docAsUpsert){
+	public InsertEsHandler docAsUpsert(boolean docAsUpsert){
 		this.docAsUpsert=docAsUpsert;
 		return this;
 	}
@@ -65,21 +73,21 @@ public class InsertHandler {
 	 * @param idFieldName
 	 * @return
 	 */
-	public InsertHandler setIdFieldName(String idFieldName) {
-		this.idFieldName = idFieldName;
+	public InsertEsHandler setIdFieldName(String idFieldName) {
+		this.idFieldName = Objects.requireNonNull(idFieldName,"idFieldName can not null");
 		return this;
 	}
 	public  boolean insertBulk(List<Map<String,Object>> list) throws Exception{
-		if(docAsUpsert&&Objects.isNull(idFieldName)){
-			throw new NullPointerException("如果是设置docAsUpsert为true,则idField必须存在");
-		}
-		return insert(Objects.requireNonNull(list, "list can not null"),idFieldName);
+			if(docAsUpsert&&Objects.isNull(idFieldName)){
+				throw new NullPointerException("如果是设置docAsUpsert为true,则idField必须存在");
+			}
+			return insert(Objects.requireNonNull(list, "list can not null"),idFieldName);
 	}
 	public  boolean insertOne(Map<String,Object> map) throws Exception{
-		if(docAsUpsert&&Objects.isNull(idFieldName)){
-			throw new NullPointerException("如果是设置docAsUpsert为true,则idField必须存在");
-		}
-		return insert(Objects.requireNonNull(map, "map can not null"),idFieldName);
+			if(docAsUpsert&&Objects.isNull(idFieldName)){
+				throw new NullPointerException("如果是设置docAsUpsert为true,则idField必须存在");
+			}
+			return insert(Objects.requireNonNull(map, "map can not null"),idFieldName);
 	}
 	/**
 	 * 批量插入ES库
@@ -180,5 +188,23 @@ public class InsertHandler {
 	public List<String> getListFailuresData() {
 		return listFailuresData;
 	}
-	
+	@Override
+	public String toDSL() {
+		return "insert not DSL";
+	}
+	/**
+	 * 该方法主要是验证那个参数没输入,辅助类
+	 */
+	@Override
+	public void validate() throws NullPointerException {
+  		Objects.requireNonNull(rhlClient, "RestHighLevelClient can not null");
+  		Objects.requireNonNull(index, "index can not null");
+  		Objects.requireNonNull(type,"type can not null");
+	}
+	@Override
+	public void close(){
+		if(rhlClient!=null){
+			pool.returnConnection(rhlClient);
+		}
+	}
 }

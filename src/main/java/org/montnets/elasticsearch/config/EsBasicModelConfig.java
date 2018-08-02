@@ -1,5 +1,8 @@
 package org.montnets.elasticsearch.config;
 import java.io.Serializable;
+import java.util.Objects;
+
+import org.montnets.elasticsearch.entity.SettingEntity;
 /**   
 * Copyright: Copyright (c) 2018 Montnets
 * 
@@ -21,9 +24,7 @@ public class EsBasicModelConfig implements Serializable{
 	private String index;
 	private String type;
 	private String settings;
-	private String mappings;
-	private int maxResultDataCount;
-	
+	private String mappings;	
    
 	public EsBasicModelConfig(String index,String type){
 			   this.index=index;
@@ -49,10 +50,12 @@ public class EsBasicModelConfig implements Serializable{
 		return settings;
 	}
 
-	public void setSettings(String settings) {
-		this.settings = settings;
+	public void setSettings(SettingEntity settings) {
+		this.settings = Objects.requireNonNull(settings, "setting can not null").toDSL();
 	}
-
+	public void setSettings(String settings) {
+		this.settings = Objects.requireNonNull(settings, "setting can not null");
+	}
 	public String getMappings() {
 		return mappings;
 	}
@@ -61,17 +64,10 @@ public class EsBasicModelConfig implements Serializable{
 		this.mappings = mappings;
 	}
 
-	public int getMaxResultDataCount() {
-		return maxResultDataCount;
-	}
-
-	public void setMaxResultDataCount(int maxResultDataCount) {
-		this.maxResultDataCount = maxResultDataCount;
-	}
 	@Override
 	public String toString() {
 		return "EsBasicModelConfig [index=" + index + ", type=" + type + ", settings=" + settings + ", mappings="
-				+ mappings + ", maxResultDataCount=" + maxResultDataCount + "]";
+				+ mappings + "]";
 	}	
 	
 

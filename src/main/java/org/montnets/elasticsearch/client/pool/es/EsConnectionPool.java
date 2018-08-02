@@ -1,4 +1,6 @@
 package org.montnets.elasticsearch.client.pool.es;
+import java.util.Objects;
+
 import org.elasticsearch.client.RestHighLevelClient;
 import org.montnets.elasticsearch.client.pool.ConnectionPool;
 import org.montnets.elasticsearch.client.pool.PoolBase;
@@ -24,11 +26,21 @@ import org.montnets.elasticsearch.config.EsConnectConfig;
  */
 public class EsConnectionPool extends PoolBase<RestHighLevelClient> implements ConnectionPool<RestHighLevelClient> {
 	private static final long serialVersionUID = 1L;
+	/**
+	 * 这样设置的话连接池将都取默认值
+	 * @param esConfig ES配置
+	 */
     public EsConnectionPool(final EsConnectConfig esConfig) {
         this(new PoolConfig(), esConfig);
     }
+    /**
+     * 连接池配置
+     * @param poolConfig 连接池配置
+     * @param esConfig ES配置
+     */
     public EsConnectionPool(final PoolConfig poolConfig, final EsConnectConfig esConfig) {
-        super(poolConfig, new EsConnectionFactory(esConfig));
+        super(Objects.requireNonNull(poolConfig, "poolConfig can not null")
+        				,new EsConnectionFactory(Objects.requireNonNull(esConfig, "esConfig can not null")));
     }
     @Override
     public RestHighLevelClient getConnection() {

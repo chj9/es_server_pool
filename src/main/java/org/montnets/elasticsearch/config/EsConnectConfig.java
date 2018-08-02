@@ -3,10 +3,7 @@ package org.montnets.elasticsearch.config;
 
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-
 import org.apache.http.HttpHost;
 import org.montnets.elasticsearch.common.enums.EsConnect;
 import org.montnets.elasticsearch.common.util.IpHandler;
@@ -69,60 +66,83 @@ public class EsConnectConfig implements Serializable{
 	public int getConnectTimeoutMillis() {
 		return connectTimeoutMillis;
 	}
+	/**
+	 * 设置连接超时时间
+	 * @param connectTimeoutMillis 单位:毫秒
+	 */
 	public void setConnectTimeoutMillis(int connectTimeoutMillis) {
 		this.connectTimeoutMillis = connectTimeoutMillis;
 	}
 	public int getSocketTimeoutMillis() {
 		return socketTimeoutMillis;
 	}
+	/**
+	 * 设置网络超时时间
+	 * @param socketTimeoutMillis 单位:毫秒
+	 */
 	public void setSocketTimeoutMillis(int socketTimeoutMillis) {
 		this.socketTimeoutMillis = socketTimeoutMillis;
 	}
 	public int getConnectionRequestTimeoutMillis() {
 		return connectionRequestTimeoutMillis;
 	}
+	/**
+	 * 设置连接请求超时时间
+	 * @param connectionRequestTimeoutMillis 单位:毫秒
+	 */
 	public void setConnectionRequestTimeoutMillis(int connectionRequestTimeoutMillis) {
 		this.connectionRequestTimeoutMillis = connectionRequestTimeoutMillis;
 	}
 	public int getMaxRetryTimeoutMillis() {
 		return maxRetryTimeoutMillis;
 	}
+	/**
+	 * 设置ES连接超时时间
+	 * @param maxRetryTimeoutMillis 单位:毫秒
+	 */
 	public void setMaxRetryTimeoutMillis(int maxRetryTimeoutMillis) {
 		this.maxRetryTimeoutMillis = maxRetryTimeoutMillis;
 	}
 	public int getMaxConnPerRoute() {
 		return maxConnPerRoute;
 	}
+	 /**
+	  * 设置路由连接最大数，路由连接的最大数，实际的单个连接池大小，如tps定为50，那就配置50
+	  * @param maxConnPerRoute
+	  */
 	public void setMaxConnPerRoute(int maxConnPerRoute) {
 		this.maxConnPerRoute = maxConnPerRoute;
 	}
 	public int getMaxConnTotal() {
 		return maxConnTotal;
 	}
+	/**
+	 * 设置连接池大小,连接池的大小,最大不要超过1000
+	 * @param maxConnTotal
+	 */
 	public void setMaxConnTotal(int maxConnTotal) {
 		this.maxConnTotal = maxConnTotal;
 	}
-	private List<EsBasicModelConfig> indexList;
-	public EsConnectConfig(){
-		indexList = new ArrayList<EsBasicModelConfig>();
-	}
+
 	public  String getScheme() {
 		return scheme;
 	}
+	/**
+	 * 连接集群协议
+	 * @param scheme 默认http
+	 */
 	public  void setScheme(String scheme) {
 		this.scheme = scheme;
 	}
 	public  String getClusterName() {
 		return clusterName;
 	}
+	/**
+	 * 设置集群名称
+	 * @param clusterName
+	 */
 	public  void setClusterName(String clusterName) {
 		this.clusterName = clusterName;
-	}
-	public List<EsBasicModelConfig> getIndexList() {
-		return indexList;
-	}
-	public void add(EsBasicModelConfig esBasicModelConfig) {
-		this.indexList.add(esBasicModelConfig);
 	}
 	public  HttpHost[] getNodes() throws IllegalAccessException {
 		if(nodes==null||nodes.length==0){
@@ -142,6 +162,10 @@ public class EsConnectConfig implements Serializable{
 		 }
 		return ips;
 	}
+	/**
+	 * 设置集群IP
+	 * @param nodes 格式为ip:端口  如 127.0.0.1:9200
+	 */
 	public  void setNodes(String[] nodes) {
 		this.nodes = nodes;
 	}

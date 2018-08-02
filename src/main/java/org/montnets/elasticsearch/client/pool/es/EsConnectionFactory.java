@@ -18,7 +18,6 @@ import org.montnets.elasticsearch.config.EsConnectConfig;
 * 
 * @ClassName: EsConnectionFactory.java
 * @Description: ES连接工厂
-
 * @version: v1.0.0
 * @author: chenhj
 * @date: 2018年7月26日 下午2:58:25 
@@ -27,6 +26,8 @@ import org.montnets.elasticsearch.config.EsConnectConfig;
 * Date         Author          Version            Description
 *---------------------------------------------------------*
 * 2018年7月26日     chenhj          v1.0.0               修改原因
+*@see
+* https://www.cnblogs.com/wgslucky/p/6105064.html  接口的意思可以看这篇文章
  */
 class EsConnectionFactory implements ConnectionFactory<RestHighLevelClient> {
     /**
@@ -139,7 +140,11 @@ class EsConnectionFactory implements ConnectionFactory<RestHighLevelClient> {
     	RestHighLevelClient client = p.getObject();
     	if (client != null){
         	try {
-				return client.ping(EsConnect.EMPTY_HEADERS);
+        		boolean status = client.ping(EsConnect.EMPTY_HEADERS);
+        		if(!status){
+        			client.close();
+        		}
+				return status;
 			} catch (IOException e) {
 				throw new ConnectionException("连接失效!");
 			}
@@ -161,10 +166,11 @@ class EsConnectionFactory implements ConnectionFactory<RestHighLevelClient> {
 	 * 功能描述：钝化资源对象
 	 * 什么时候会调用此方法
 	 * 1：将资源返还给资源池时，调用此方法。
+	 * 对对象做一些清理操作。比如清理掉过期的数据，下次获得对象时，不受旧数据的影响。
 	 */
     @Override
     public void passivateObject(PooledObject<RestHighLevelClient> p) throws Exception {
-       
+
     }
     @Override
     public RestHighLevelClient createConnection() throws Exception {

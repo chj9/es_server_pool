@@ -12,8 +12,13 @@ import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.montnets.elasticsearch.client.EsPool;
+import org.montnets.elasticsearch.client.pool.es.EsConnectionPool;
 import org.montnets.elasticsearch.config.EsBasicModelConfig;
+import org.montnets.elasticsearch.entity.EsRequestEntity;
+import org.montnets.elasticsearch.handle.IBasicHandler;
 
 /**   
 * Copyright: Copyright (c) 2018 Montnets
@@ -30,11 +35,14 @@ import org.montnets.elasticsearch.config.EsBasicModelConfig;
 *---------------------------------------------------------*
 * 2018年7月26日     chenhj          v1.0.0               修改原因
 */
-public class IndexHandler{
-	private static Logger logger = LogManager.getLogger(IndexHandler.class);
+public class IndexEsHandler implements IBasicHandler{
+	private static Logger logger = LogManager.getLogger(IndexEsHandler.class);
 	private RestHighLevelClient client;
-	public IndexHandler(RestHighLevelClient client){
-		this.client = client;
+	  /*********对象池*******************/
+	  private EsConnectionPool pool = null;
+	private void builder(){
+		this.pool=EsPool.ESCLIENT.getPool();
+		this.client=pool.getConnection();
 	}
 	 /**
      * 判断指定的索引名是否存在
@@ -55,11 +63,14 @@ public class IndexHandler{
 		}
         return isExists;
     }
+ public boolean createIndex(final EsBasicModelConfig esBasicModelConfig){
+		 return create(esBasicModelConfig);
+ }
     /**
      * 如果索引库不存在则创建一个
      * @return  成功：true; 失败：false;
      */
-  public boolean createIndex(final EsBasicModelConfig esBasicModelConfig){
+  private boolean create(final EsBasicModelConfig esBasicModelConfig){
     	boolean falg = true;
     Objects.requireNonNull(esBasicModelConfig,"esBasicModelConfig is not null");
 	String type = Objects.requireNonNull(esBasicModelConfig.getType(),"type is not null");
@@ -82,10 +93,6 @@ public class IndexHandler{
     		}
 			CreateIndexResponse createIndexResponse = client.indices().create(request);
 			falg = createIndexResponse.isAcknowledged();
-			if(falg&&Objects.nonNull(esBasicModelConfig.getMaxResultDataCount())){
-				//设置查询单次返回最大值
-				maxResultWindow(index,esBasicModelConfig.getMaxResultDataCount());
-			}
 			logger.info("创建索引库"+index+",状态为:"+falg);
 		} catch (IOException e) {
 			logger.error("创建INDEX报错",e);
@@ -100,10 +107,10 @@ public class IndexHandler{
      * @throws IOException 
      */
     public void maxResultWindow(String index,Integer maxResultData) throws IOException{
-    	Objects.requireNonNull(index,"index is not null");
-    	Objects.requireNonNull(maxResultData,"maxResultData is not null");
-    	RestClient restClient =client.getLowLevelClient();
     	try {
+	    	Objects.requireNonNull(index,"index is not null");
+	    	Objects.requireNonNull(maxResultData,"maxResultData is not null");
+	    	RestClient restClient =client.getLowLevelClient();
         	String source ="{\"index\":{\"max_result_window\": \"%d\"}}";
         	source=String.format(source, maxResultData);
    		 	HttpEntity entity = new NStringEntity(source, ContentType.APPLICATION_JSON);
@@ -112,4 +119,21 @@ public class IndexHandler{
 			throw e;
 		}
     }
+	@Override
+	public String toDSL() {
+		return "not DSL";
+	}
+	public void builder(@Nullable EsRequestEntity esRequestEntity) {
+		builder();
+	}
+	@Override
+	public void validate() throws NullPointerException {
+		Objects.requireNonNull(client, "RestHighLevelClient can not null");
+	}
+	@Override
+	public void close() {
+		if(client!=null){
+			pool.returnConnection(client);
+		}
+	}
 }

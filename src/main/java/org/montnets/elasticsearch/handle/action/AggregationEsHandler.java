@@ -26,8 +26,10 @@ import org.elasticsearch.search.aggregations.metrics.max.Max;
 import org.elasticsearch.search.aggregations.metrics.min.Min;
 import org.elasticsearch.search.aggregations.metrics.sum.Sum;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.montnets.elasticsearch.client.EsPool;
+import org.montnets.elasticsearch.client.pool.es.EsConnectionPool;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
-import org.montnets.elasticsearch.handle.IBasicHandle;
+import org.montnets.elasticsearch.handle.IBasicHandler;
 /**   
 * Copyright: Copyright (c) 2018 Montnets
 * 
@@ -42,7 +44,7 @@ import org.montnets.elasticsearch.handle.IBasicHandle;
 *---------------------------------------------------------*
 * 2018年6月12日     chenhj          v1.0.0               修改原因
 */
-public class AggregationHandler implements IBasicHandle{
+public class AggregationEsHandler implements IBasicHandler{
 	  private String index;
 	  private String type;	  
 	  private RestHighLevelClient rhlClient;
@@ -51,39 +53,45 @@ public class AggregationHandler implements IBasicHandle{
 	  private String count ="count";
 	  private SearchSourceBuilder searchSourceBuilder;
 	  private  AggregationBuilder aggregationBuilder;
-   	  public AggregationHandler(RestHighLevelClient rhlClient,EsRequestEntity entity){
-		this.index=Objects.requireNonNull(entity.getIndex(),"index can not null");
-		this.type =Objects.requireNonNull(entity.getType(),"type can not null");
-		this.rhlClient=rhlClient;
-	}
+	  /*********对象池*******************/
+	  private EsConnectionPool pool = null;
+  	@Override
+  	public void builder(EsRequestEntity esRequestEntity){
+  		Objects.requireNonNull(esRequestEntity, "EsRequestEntity can not null");
+  		this.index=Objects.requireNonNull(esRequestEntity.getIndex(), "index can not null");
+  		this.type =Objects.requireNonNull(esRequestEntity.getType(), "type can not null");
+		this.pool=EsPool.ESCLIENT.getPool();
+		this.rhlClient=pool.getConnection();
+  		
+  	}
 	 /**
 	  * 设置脚本
 	  */
-	 public AggregationHandler setScript(Script script) {
+	 public AggregationEsHandler setScript(Script script) {
 			this.script = script;
 			return this;
 	 }
 	 /**
 	  * 设置聚合
 	  */
-	 public AggregationHandler setAggregationBuilder(AggregationBuilder aggregationBuilder) {
+	 public AggregationEsHandler setAggregationBuilder(AggregationBuilder aggregationBuilder) {
 			this.aggregationBuilder = aggregationBuilder;
 			return this;
 	 }
 	 /**
 	  * 设置过滤条件
 	  */
-	 public AggregationHandler setQueryBuilder(QueryBuilder queryBuilder) {
+	 public AggregationEsHandler setQueryBuilder(QueryBuilder queryBuilder) {
 			this.queryBuilder = queryBuilder;
 			return this;
 	 }
 	/**
-	* 普通聚合查询
+	* 普通聚合查询,总数字段默认 count
 	* @return
 	* @throws Exception
 	*/
 	 public  List<Map<String, Object>>  sraechAgg() throws Exception{
-		 return sraechEsAgg(count);
+			 return sraechEsAgg(count);
 	 }
 	/**
 	* 普通聚合查询
@@ -98,9 +106,8 @@ public class AggregationHandler implements IBasicHandle{
 	private List<Map<String,Object>> listmap =null;
 	private Map<String,Object> map =null;
 	private synchronized  List<Map<String, Object>>  sraechEsAgg(String countField) throws Exception{
-		listmap= new ArrayList<Map<String,Object>>();
-		map= new HashMap<String,Object>(16);
-		 try {
+			listmap= new ArrayList<Map<String,Object>>();
+			map= new HashMap<String,Object>(16);
 			 SearchRequest searchRequest = new SearchRequest(index); 
 			 searchRequest.types(type);
 			 searchSourceBuilder = new SearchSourceBuilder(); 
@@ -125,9 +132,6 @@ public class AggregationHandler implements IBasicHandle{
 			 Aggregations aggregations = searchResponse.getAggregations();			
 			 aggHandle(aggregations);
 			 return listmap;
-		 } catch (Exception e) {
-			throw e;
-		}
 	}
  /**
   * 因为聚合的特殊性后续会写到文档中
@@ -218,5 +222,23 @@ public class AggregationHandler implements IBasicHandle{
 	public String toDSL() {
 		// TODO Auto-generated method stub
 		return searchSourceBuilder.toString();
+	}
+	/**
+	 * 该方法主要是验证那个参数没输入,辅助类
+	 */
+	@Override
+	public void validate() throws NullPointerException {
+  		Objects.requireNonNull(rhlClient, "RestHighLevelClient can not null");
+  		Objects.requireNonNull(index, "index can not null");
+  		Objects.requireNonNull(type,"type can not null");
+	}
+	/* (non-Javadoc)
+	 * @see org.montnets.elasticsearch.handle.IBasicHandle#close()
+	 */
+	@Override
+	public void close() {
+		if(rhlClient!=null){
+			pool.returnConnection(rhlClient);
+		}
 	}
 }

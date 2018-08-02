@@ -32,12 +32,14 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
+import org.montnets.elasticsearch.client.EsPool;
+import org.montnets.elasticsearch.client.pool.es.EsConnectionPool;
+import org.montnets.elasticsearch.common.jsonparser.JSONParser;
+import org.montnets.elasticsearch.common.jsonparser.model.JsonObject;
 import org.montnets.elasticsearch.common.util.PoolUtils;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
 import org.montnets.elasticsearch.entity.ScrollEntity;
-import org.montnets.elasticsearch.handle.IBasicHandle;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
+import org.montnets.elasticsearch.handle.IBasicHandler;
 /**
  * 
 * Copyright: Copyright (c) 2018 Montnets
@@ -54,7 +56,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 *---------------------------------------------------------*
 * 2018年7月30日     chenhj          v1.0.0               修改原因
  */
-public class SearchHandler implements IBasicHandle{
+public class SearchEsHandler implements IBasicHandler{
 	  private String index;
 	  private String type;	  
 	  private RestHighLevelClient rhlClient;
@@ -72,43 +74,36 @@ public class SearchHandler implements IBasicHandle{
 	  private String[] includeFields =null;
 	  /*******排除哪些字段********/
 	  private String[] excludeFields = null;
-	  
+	  /*********对象池*******************/
+	  private EsConnectionPool pool = null;
 	  /**
 	   * 这两个参数是获取版本和解释,官方都是默认true,我这里为了减少返回数据设置默认false,如果需要设置为true,在设置中设置即可
 	   */
 	  private boolean  version = false;
 	  private boolean  explain = false;
-	  /**
-	   * 只有在执行一次查询之后才会有总数,与搜索请求匹配的总命中数。
-	   */
 	  private long totalCount;
-	  public SearchHandler(RestHighLevelClient rhlClient,EsRequestEntity esRequestEntity){
-		Objects.requireNonNull(rhlClient, "RestHighLevelClient can not null");
+	@Override
+	public void builder(EsRequestEntity esRequestEntity){
 		Objects.requireNonNull(esRequestEntity, "EsRequestEntity can not null");
-		this.index=esRequestEntity.getIndex();
-		this.type =esRequestEntity.getIndex();
-		if(esRequestEntity.getType()!=null){
-			this.type =esRequestEntity.getType();
-		}
+		this.index=Objects.requireNonNull(esRequestEntity.getIndex(), "index can not null");
+		this.type =Objects.requireNonNull(esRequestEntity.getType(), "type can not null");
 		this.esRequestEntity=esRequestEntity;
-		this.rhlClient=rhlClient;
+		this.pool=EsPool.ESCLIENT.getPool();
+		this.rhlClient=pool.getConnection();
 	}
 	/**
 	 * 设置脚本
 	*/
-	public SearchHandler setScript(final String scriptName,final Script script) {
-		Objects.requireNonNull(scriptName, "scriptName can not null");
-		Objects.requireNonNull(script, "script can not null");
-		this.scriptName=scriptName;
-		this.script = script;
+	public SearchEsHandler setScript(final String scriptName,final Script script) {
+		this.scriptName=Objects.requireNonNull(scriptName, "scriptName can not null");
+		this.script = Objects.requireNonNull(script, "script can not null");
 		return this;
 	}
 	 /**
 	  * 设置过滤条件
 	  */
-	 public SearchHandler setQueryBuilder(final QueryBuilder queryBuilder) {
-		 Objects.requireNonNull(queryBuilder, "QueryBuilder can not null");
-		 this.queryBuilder = queryBuilder;
+	 public SearchEsHandler setQueryBuilder(final QueryBuilder queryBuilder) {
+		 this.queryBuilder = Objects.requireNonNull(queryBuilder, "QueryBuilder can not null");
 		 return this;
 	 }
 	 /**
@@ -116,11 +111,9 @@ public class SearchHandler implements IBasicHandle{
 	  * @param field 排序的参数
 	  * @param order 排序方法
 	  */
-	 public SearchHandler addSort(final String field,final SortOrder sortOrder){
-		 Objects.requireNonNull(field, "field can not null");
-		 Objects.requireNonNull(sortOrder, "order can not null");
-		 this.sortField=field;
-		 this.sortOrder=sortOrder;
+	 public SearchEsHandler addSort(final String field,final SortOrder sortOrder){
+		 this.sortField=Objects.requireNonNull(field, "field can not null");
+		 this.sortOrder= Objects.requireNonNull(sortOrder, "order can not null");
 		 return this;
 	 }
 	 /**
@@ -128,17 +121,17 @@ public class SearchHandler implements IBasicHandle{
 	  * @param includeFields 需要的字段
 	  * @param excludeFields 不需要的字段
 	  */
-	 public SearchHandler fetchSource(String[] includeFields,String[] excludeFields){
+	 public SearchEsHandler fetchSource(String[] includeFields,String[] excludeFields){
 		 this.excludeFields=excludeFields;
 		 this.includeFields=includeFields;
 		 return this;
 	 }
 	 
-	 public SearchHandler setVersion(boolean version) {
+	 public SearchEsHandler setVersion(boolean version) {
 		this.version = version;
 		return this;
 	}
-	public SearchHandler setExplain(boolean explain) {
+	public SearchEsHandler setExplain(boolean explain) {
 		this.explain = explain;
 		return this;
 	}
@@ -193,8 +186,7 @@ public class SearchHandler implements IBasicHandle{
 			 return hits; 
 		 } catch (Exception e) {
 			 throw e;
-		}
-	    
+		 }
 	}
 	/**
 	 * 根据ID查询
@@ -225,6 +217,7 @@ public class SearchHandler implements IBasicHandle{
 	 */
 	public synchronized ScrollEntity<Map<String, Object>> searchScroll(ScrollEntity<Map<String, Object>> scrollEntity) throws IOException{
 		 List<Map<String, Object>>  list = new ArrayList<Map<String, Object>>();
+		try {
 		 String scrollId = scrollEntity.getScrollId();
 		 //首次进入
 		if(PoolUtils.isEmpty(scrollId)){
@@ -264,17 +257,20 @@ public class SearchHandler implements IBasicHandle{
 		}
 		//非首次进入
 		else{
-			SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId); 
-			scrollRequest.scroll(TimeValue.timeValueMinutes(1));
-			SearchResponse searchScrollResponse = rhlClient.searchScroll(scrollRequest);
-			SearchHits hits = searchScrollResponse.getHits(); 
-	     	//转换
-	     	list=hitsToList(hits);
-			scrollId = searchScrollResponse.getScrollId();  
+				SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId); 
+				scrollRequest.scroll(TimeValue.timeValueMinutes(1));
+				SearchResponse searchScrollResponse = rhlClient.searchScroll(scrollRequest);
+				SearchHits hits = searchScrollResponse.getHits(); 
+		     	//转换
+		     	list=hitsToList(hits);
+				scrollId = searchScrollResponse.getScrollId();  
+			}
+			scrollEntity.setScrollId(scrollId);
+			scrollEntity.setDataList(list);
+			return scrollEntity; 
+		} catch (Exception e) {
+			throw e;
 		}
-		scrollEntity.setScrollId(scrollId);
-		scrollEntity.setDataList(list);
-		return scrollEntity; 
 	}
 	/**
 	 * 清除滚动ID
@@ -283,12 +279,13 @@ public class SearchHandler implements IBasicHandle{
 	 * @throws IOException
 	 */
 	public synchronized boolean clearScroll(String scrollId) throws IOException{
-		Objects.requireNonNull(scrollId, "scrollId can not null");
-		ClearScrollRequest clearScrollRequest = new ClearScrollRequest(); 
-		clearScrollRequest.addScrollId(scrollId);
-		ClearScrollResponse clearScrollResponse = rhlClient.clearScroll(clearScrollRequest);
-		boolean succeeded = clearScrollResponse.isSucceeded();
-		return succeeded;
+			Objects.requireNonNull(scrollId, "scrollId can not null");
+			ClearScrollRequest clearScrollRequest = new ClearScrollRequest(); 
+			clearScrollRequest.addScrollId(scrollId);
+			ClearScrollResponse clearScrollResponse = rhlClient.clearScroll(clearScrollRequest);
+			boolean succeeded = clearScrollResponse.isSucceeded();
+			return succeeded;
+		
 	}
     /**  
      * 查询总数
@@ -296,24 +293,23 @@ public class SearchHandler implements IBasicHandle{
      * @throws Exception  
      */  
     public synchronized Long count() throws Exception {  
-    	 searchSourceBuilder = new SearchSourceBuilder(); 
-	     //是否有自定义条件
-	     if(Objects.nonNull(queryBuilder)){
-	    	 searchSourceBuilder.query(queryBuilder);
-	     }
-	     //取低级客户端API来执行这步操作
-	     RestClient restClient = rhlClient.getLowLevelClient();
-		 String endPoint = "/" + index + "/" + type +"/_count";
-		 //删除的条件
-		 String source = searchSourceBuilder.toString();
-		 HttpEntity entity = new NStringEntity(source, ContentType.APPLICATION_JSON);
-		 Response response =restClient.performRequest("GET", endPoint,Collections.<String, String> emptyMap(),entity);
-		 String responseBody = EntityUtils.toString(response.getEntity());
-		 ObjectMapper mapper = new ObjectMapper();
-		 @SuppressWarnings("rawtypes")
-		 Map map =mapper.readValue(responseBody, Map.class);
-		 Integer count =(Integer) map.get("count");
-		 return count.longValue();
+	    	 searchSourceBuilder = new SearchSourceBuilder(); 
+		     //是否有自定义条件
+		     if(Objects.nonNull(queryBuilder)){
+		    	 searchSourceBuilder.query(queryBuilder);
+		     }
+		     //取低级客户端API来执行这步操作
+		     RestClient restClient = rhlClient.getLowLevelClient();
+			 String endPoint = "/" + index + "/" + type +"/_count";
+			 //删除的条件
+			 String source = searchSourceBuilder.toString();
+			 HttpEntity entity = new NStringEntity(source, ContentType.APPLICATION_JSON);
+			 Response response =restClient.performRequest("GET", endPoint,Collections.<String, String> emptyMap(),entity);
+			 String responseBody = EntityUtils.toString(response.getEntity());
+			 JSONParser jsonParser = new JSONParser();
+		     JsonObject json = (JsonObject) jsonParser.fromJSON(responseBody);
+			 Integer count =(Integer)json.get("count");
+			 return count.longValue();
     }
     /**
      * 根据ID查询数据是否存在
@@ -333,7 +329,9 @@ public class SearchHandler implements IBasicHandle{
          return isExists;
     }
 	/**
-     * 获取当前请求的所有条数
+     * 获取当前请求的所有条数	  
+	 * 只有在执行一次查询之后才会有总数,与搜索请求匹配的总命中数。
+	 * 如果需要根据条件查询总数请使用{@link count}方法
      */
 	public long getTotalCount() {
 		return totalCount;
@@ -367,7 +365,24 @@ public class SearchHandler implements IBasicHandle{
 	 */
 	@Override
 	public String toDSL() {
-		Objects.requireNonNull(searchSourceBuilder, "not request DSL!");
-		return searchSourceBuilder.toString();
+		return Objects.requireNonNull(searchSourceBuilder, "not request DSL!").toString();
+	}
+	/**
+	 * 该方法主要是验证那个参数没输入,辅助类
+	 */
+	@Override
+	public void validate() throws NullPointerException {
+  		Objects.requireNonNull(rhlClient, "RestHighLevelClient can not null");
+  		Objects.requireNonNull(index, "index can not null");
+  		Objects.requireNonNull(type,"type can not null");
+	}
+	/* (non-Javadoc)
+	 * @see org.montnets.elasticsearch.handle.IBasicHandle#close()
+	 */
+	@Override
+	public void close() {
+		if(rhlClient!=null){
+			pool.returnConnection(rhlClient);
+		}
 	}
 }

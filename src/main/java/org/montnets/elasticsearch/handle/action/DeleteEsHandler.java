@@ -20,8 +20,10 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.montnets.elasticsearch.client.EsPool;
+import org.montnets.elasticsearch.client.pool.es.EsConnectionPool;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
-import org.montnets.elasticsearch.handle.IBasicHandle;
+import org.montnets.elasticsearch.handle.IBasicHandler;
 
 /**
  * 
@@ -39,30 +41,26 @@ import org.montnets.elasticsearch.handle.IBasicHandle;
 *---------------------------------------------------------*
 * 2018年6月14日     chenhj          v1.0.0               修改原因
  */
-public class DeleteHandler implements IBasicHandle{
+public class DeleteEsHandler implements IBasicHandler{
 	  private String index;
 	  private String type;	  
 	  private RestHighLevelClient rhlClient;
 	  private	QueryBuilder queryBuilder;
 	  private SearchSourceBuilder searchSourceBuilder;
-	  private boolean isSync = false;
-	public DeleteHandler(RestHighLevelClient rhlClient,EsRequestEntity entity){
-		this.index=Objects.requireNonNull(entity.getIndex(),"index can not null");
-		this.type =Objects.requireNonNull(entity.getType(),"type can not null");
-		this.rhlClient=rhlClient;
-	}
-	 /**
-	  * 设置是否同步删除还是异步删除,异步删除返回值都是true  
-	  * @param isSync  同步 true ,异步 false
-	  */
-	 public DeleteHandler setSync(boolean isSync) {
-			this.isSync = isSync;
-			return this;
-	 }
+	  /*********对象池*******************/
+	  private EsConnectionPool pool = null;
+  	@Override
+  	public void builder(EsRequestEntity esRequestEntity){
+  		Objects.requireNonNull(esRequestEntity, "EsRequestEntity can not null");
+  		this.index=Objects.requireNonNull(esRequestEntity.getIndex(), "index can not null");
+  		this.type =Objects.requireNonNull(esRequestEntity.getType(), "type can not null");
+		this.pool=EsPool.ESCLIENT.getPool();
+		this.rhlClient=pool.getConnection();
+  	}
 	 /**
 	  * 设置过滤条件
 	  */
-	 public DeleteHandler setQueryBuilder(QueryBuilder queryBuilder) {
+	 public DeleteEsHandler setQueryBuilder(QueryBuilder queryBuilder) {
 			this.queryBuilder = queryBuilder;
 			return this;
 	 }
@@ -71,15 +69,17 @@ public class DeleteHandler implements IBasicHandle{
 	* @author chenhongjie 
 	*/
 	public  boolean  delById(String id) throws Exception{
-		DeleteRequest request = new DeleteRequest(index,type,id); 
-		DeleteResponse deleteResponse =  rhlClient.delete(request);
-		return deleteResponse.status()==RestStatus.OK;
+			DeleteRequest request = new DeleteRequest(index,type,id); 
+			DeleteResponse deleteResponse =  rhlClient.delete(request);
+			return deleteResponse.status()==RestStatus.OK;
 	}
 	/**
-	 * 根据搜索内容删除数据
+	 * 根据搜索内容删除数据 
+	 * @param isSync  true：同步删除   false:异步删除
+	 * 如果一次删除数据量大建议使用异步更新
 	* @author chenhongjie 
 	 */
-	public  boolean  delDocByQuery() throws Exception{
+	public  boolean  delDocByQuery(boolean isSync) throws Exception{
 		 try {
 			 searchSourceBuilder = new SearchSourceBuilder(); 
 		     //是否有自定义条件
@@ -107,13 +107,32 @@ public class DeleteHandler implements IBasicHandle{
 			 reLog.setLogStr(searchSourceBuilder.toString());
 			 new Thread(reLog, "DELETE_"+System.currentTimeMillis()).start();
 			 return true;
-		 } catch (Exception e) {			
+		} catch (Exception e) {			
 				throw e;
 		}
 	}
 	@Override
 	public String toDSL() {
 		return searchSourceBuilder.toString();
+	}
+	/**
+	 * 该方法主要是验证那个参数没输入,辅助类
+	 */
+	@Override
+	public void validate() throws NullPointerException {
+  		Objects.requireNonNull(rhlClient, "RestHighLevelClient can not null");
+  		Objects.requireNonNull(index, "index can not null");
+  		Objects.requireNonNull(type,"type can not null");
+  		Objects.requireNonNull(queryBuilder,"queryBuilder can not null");
+	}
+	/* (non-Javadoc)
+	 * @see org.montnets.elasticsearch.handle.IBasicHandle#close()
+	 */
+	@Override
+	public void close() {
+		if(rhlClient!=null){
+			pool.returnConnection(rhlClient);
+		}
 	}
 }
 /**
