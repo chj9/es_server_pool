@@ -55,8 +55,8 @@ public abstract class PoolBase<T> implements Closeable, Serializable {
      * @param poolConfig 池配置
      * @param factory    池对象工厂
      */
-    @SuppressWarnings("all") 
-    public PoolBase(final GenericObjectPoolConfig poolConfig,
+    @SuppressWarnings("all")
+    public PoolBase( final GenericObjectPoolConfig poolConfig,
                     PooledObjectFactory<T> factory) {
         this.initPool(poolConfig, factory);
     }

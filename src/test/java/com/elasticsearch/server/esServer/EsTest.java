@@ -19,7 +19,7 @@ import org.montnets.elasticsearch.client.pool.PoolConfig;
 import org.montnets.elasticsearch.client.pool.es.EsConnectionPool;
 import org.montnets.elasticsearch.common.enums.ConditionType;
 import org.montnets.elasticsearch.common.enums.EsConnect;
-import org.montnets.elasticsearch.condition.ConditionLogic;
+import org.montnets.elasticsearch.condition.ConditionEs;
 import org.montnets.elasticsearch.config.EsBasicModelConfig;
 import org.montnets.elasticsearch.config.EsConnectConfig;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
@@ -49,7 +49,6 @@ import org.montnets.elasticsearch.handle.action.UpdateEsHandler;
  */
 public class EsTest {
 	private static Logger logger = LogManager.getLogger(EsTest.class);
-	RestHighLevelClient client =null;
 	EsConnectionPool pool =null;
        //连接池对象 = 连接池所维护的对象的创建工厂 + 连接池对象配置  
     public void EsConnectPoolDemo() throws Exception {
@@ -61,7 +60,8 @@ public class EsTest {
 			 logger.info("池中激活数:{}",pool.getNumActive());
 			//获得空闲数
 			 logger.info("池中空闲数:{}",pool.getNumIdle());
-		 	queryCountTest();
+		 	//queryCountTest();
+			 deleteTest();
 			//获得激活数
 			 logger.info("池中激活数:{}",pool.getNumActive());
 			//获得空闲数
@@ -119,6 +119,11 @@ public class EsTest {
 		esConnectConfig.setScheme(EsConnect.HTTP);
 		//把连接池配置和ES集群配置加载进池中
 		pool = new EsConnectionPool(config, esConnectConfig);
+		/***************如果不使用我的封装处理类可这样获取对象返还对象********************/
+		//获取对象
+		//RestHighLevelClient client = pool.getConnection();
+		//返还对象
+		//pool.returnConnection(client);
 		//设为程序全局可用这个连接池
 		EsPool.ESCLIENT.setPool(pool);
     }
@@ -218,26 +223,28 @@ public class EsTest {
     }
     public void queryPageTest(){
 		/***************索引库查询示例2:分页查询****************/	
-    	EsRequestEntity esRequestEntity = new EsRequestEntity("demo","demo");
+    	 EsRequestEntity esRequestEntity = new EsRequestEntity("demo","demo");
 		 //实例一个查询对象
 		 SearchEsHandler search = new SearchEsHandler();
 		 try {
-			 //注意:浅分页建议用,深分页不建议使用
-			 //设置需要分页
-			 esRequestEntity.setNeedPaging(true);
-			 //页数,默认1
-			 esRequestEntity.setPageNo(1);
-			//每页的数据量,默认10条
-			 esRequestEntity.setPageSize(1);
-			 //设置配置
-			 search.builder(esRequestEntity);
-			 //执行查询，dataList为查询出来的数据
-			 List<Map<String,Object>> dataList=search.sraechSourceAsList();
-			 logger.info("分页查询数据:{}",dataList);
-			 //该分页数据总量,只有执行分页了才能得到数据总量
-			 long total = search.getTotalCount();
-			 logger.info("分页查询总数:{}",total);
-			 logger.info("分页查询DSL:{}",search.toDSL());
+				 //注意:浅分页建议用,深分页不建议使用
+				 //设置需要分页
+				 esRequestEntity.setNeedPaging(true);
+				 //页数,默认1
+				 esRequestEntity.setPageNo(1);
+				//每页的数据量,默认10条
+				 esRequestEntity.setPageSize(1);
+				 //设置配置(可不设置)
+				 search.addSort("id", SortOrder.DESC);
+				 //设置配置
+				 search.builder(esRequestEntity);
+				 //执行查询，dataList为查询出来的数据
+				 List<Map<String,Object>> dataList=search.sraechSourceAsList();
+				 logger.info("分页查询数据:{}",dataList);
+				 //该分页数据总量,只有执行分页了才能得到数据总量
+				 long total = search.getTotalCount();
+				 logger.info("分页查询总数:{}",total);
+				 logger.info("分页查询DSL:{}",search.toDSL());
 			} catch (Exception e) {
 				// TODO: handle exception
 			}finally{
@@ -325,19 +332,22 @@ public class EsTest {
 		}
     }
     public void deleteTest(){
-    	EsRequestEntity esRequestEntity = new EsRequestEntity("demo","demo");
+    	EsRequestEntity esRequestEntity = new EsRequestEntity("im_msg_test","im_msg");
 		/************数据删除*************/
 		DeleteEsHandler del = new DeleteEsHandler();
 		try {
+		ConditionEs con = new ConditionEs().and(ConditionType.gt,"recvtime","2018-08-01 00:00:00.000")
+				.and(ConditionType.lt, "recvtime","2018-08-04 23:59:59.999");
 		//设置条件
-		del.setQueryBuilder(null);
+		del.setQueryBuilder(con);
 		//根据ID删除数据
-		del.delById("id值");
-		//注意:true为同步删除 ,false为异步删除  需要删除量大时建议使用异步
-		del.delDocByQuery(true);
+		//del.delById("id值");
 		//创建接口
 		del.builder(esRequestEntity);
-		logger.info("分页查询DSL:{}",del.toDSL());
+		//注意:true为同步删除 ,false为异步删除  需要删除量大时建议使用异步
+		del.delDocByQuery(false);
+
+		logger.info("删除查询DSL:{}",del.toDSL());
 		} catch (Exception e) {
 			// TODO: handle exception
 		}finally{
@@ -346,16 +356,43 @@ public class EsTest {
     }
     public void conditionTest(){
     	try {
-    		ConditionLogic con = new ConditionLogic()
-    				.and(ConditionType.exist,"sa")
-    				.and(ConditionType.unexist,"bb")
-    				.and(ConditionType.equal, "bb","cc")
-    				.and(ConditionType.unequal, "bb","cc")
-    				.and(ConditionType.gt, "data","2013")
-    				.and(ConditionType.gte, "data1","2013")
-    				.and(ConditionType.lt, "data","2013")
-    				.and(ConditionType.lte, "data1","2013");
-    		System.out.println(con.toDSL());
+    		ConditionEs con = new ConditionEs()
+    				//*******以下开始设置条件**********/
+    				//name字段必须存在
+    				.and(ConditionType.exist,"name")
+    				//age字段必须不存在
+    				.and(ConditionType.unexist,"age")
+    				//class 必须等于 12
+    				.and(ConditionType.equal, "class",12)
+    				//name 必须不等于lilin
+    				.and(ConditionType.unequal, "bb","lilin")
+    				//creattm 必须大于2013-08-02
+    				.and(ConditionType.gt, "creattm","2013-08-02")
+    				//creattm 必须大于等于2013-08-02
+    				.and(ConditionType.gte, "creattm","2013-08-02")
+    				//creattm 必须小于2013-08-02
+    				.and(ConditionType.lt, "creattm","2013")
+    				//creattm 必须小于等于2013-08-02
+    				.and(ConditionType.lte, "creattm","2013")
+    				//name字段或存在
+    				.or(ConditionType.exist,"name")
+    				//age字段或不存在
+    				.or(ConditionType.unexist,"age")
+    				//class 或等于 12
+    				.or(ConditionType.equal, "class",12)
+    				//name 或不等于lilin
+    				.or(ConditionType.unequal, "bb","lilin")
+    				//creattm 或大于2013-08-02
+    				.or(ConditionType.gt, "creattm","2013-08-02")
+    				//creattm 或大于等于2013-08-02
+    				.or(ConditionType.gte, "creattm","2013-08-02")
+    				//creattm 或小于2013-08-02
+    				.or(ConditionType.lt, "creattm","2013")
+    				//creattm 或小于等于2013-08-02
+    				.or(ConditionType.lte, "creattm","2013");
+    		org.elasticsearch.index.query.QueryBuilder queryBuilder =con.toResult();
+    		//可直接在kibana中使用
+    		System.out.println("打印生成的查询JSON："+con.toDSL());
 		} catch (Exception e) {
 			// TODO: handle exception
 		}

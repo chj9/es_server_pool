@@ -37,6 +37,7 @@ import org.montnets.elasticsearch.client.pool.es.EsConnectionPool;
 import org.montnets.elasticsearch.common.jsonparser.JSONParser;
 import org.montnets.elasticsearch.common.jsonparser.model.JsonObject;
 import org.montnets.elasticsearch.common.util.PoolUtils;
+import org.montnets.elasticsearch.condition.ConditionEs;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
 import org.montnets.elasticsearch.entity.ScrollEntity;
 import org.montnets.elasticsearch.handle.IBasicHandler;
@@ -102,8 +103,8 @@ public class SearchEsHandler implements IBasicHandler{
 	 /**
 	  * 设置过滤条件
 	  */
-	 public SearchEsHandler setQueryBuilder(final QueryBuilder queryBuilder) {
-		 this.queryBuilder = Objects.requireNonNull(queryBuilder, "QueryBuilder can not null");
+	 public SearchEsHandler setQueryBuilder(final ConditionEs queryBuilder) {
+		 this.queryBuilder = queryBuilder.toResult();
 		 return this;
 	 }
 	 /**

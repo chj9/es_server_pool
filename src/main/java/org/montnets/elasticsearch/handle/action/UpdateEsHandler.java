@@ -1,21 +1,15 @@
 package org.montnets.elasticsearch.handle.action;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.update.UpdateRequest;
-import org.elasticsearch.client.Response;
-import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.script.Script;
@@ -278,44 +272,6 @@ public class UpdateEsHandler implements IBasicHandler{
 	public void close() {
 		if(rhlClient!=null){
 			pool.returnConnection(rhlClient);
-		}
-	}
-}
-/**
-*
-* @ClassName: DelIndexAction.java
-* @Description: 异步写删除日志的方法
-*/
-class RecordUpdate implements Runnable{
-	private static Logger logger = LogManager.getLogger(RecordDeleteLog.class);
-	private String command;
-	private HttpEntity entity;
-	private RestClient restClient;
-	private String logStr;
-	public void setCommand(String command) {
-		this.command = command;
-	}
-	public void setEntity(HttpEntity entity) {
-		this.entity = entity;
-	}
-	public void setRestClient(RestClient restClient) {
-		this.restClient = restClient;
-	}
-	public void setLogStr(String logStr) {
-		this.logStr = logStr;
-	}
-	@Override
-	public void run() {
-		 try {
-			Response response = restClient.performRequest("POST", command,Collections.<String, String> emptyMap(),entity);
-			boolean status = response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
-			if(status){
-				logger.info("更新成功...更新查询语句:{}",logStr);
-			}else{
-				logger.error("更新失败...更新查询语句:{}",logStr);
-			}
-		} catch (IOException e) {
-			logger.error("更新出异常,如果是超时异常则无需处理...更新查询语句:{},异常:{}",logStr,e);
 		}
 	}
 }

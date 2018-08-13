@@ -28,6 +28,7 @@ import org.elasticsearch.search.aggregations.metrics.sum.Sum;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.montnets.elasticsearch.client.EsPool;
 import org.montnets.elasticsearch.client.pool.es.EsConnectionPool;
+import org.montnets.elasticsearch.condition.ConditionEs;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
 import org.montnets.elasticsearch.handle.IBasicHandler;
 /**   
@@ -81,8 +82,8 @@ public class AggregationEsHandler implements IBasicHandler{
 	 /**
 	  * 设置过滤条件
 	  */
-	 public AggregationEsHandler setQueryBuilder(QueryBuilder queryBuilder) {
-			this.queryBuilder = queryBuilder;
+	 public AggregationEsHandler setQueryBuilder(ConditionEs queryBuilder) {
+			this.queryBuilder = queryBuilder.toResult();
 			return this;
 	 }
 	/**

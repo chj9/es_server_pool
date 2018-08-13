@@ -20,12 +20,12 @@ import org.montnets.elasticsearch.common.enums.ConditionType;
 *---------------------------------------------------------*
 * 2018年8月2日     chenhj          v1.0.0               修改原因
 */
-public class ConditionLogic {
+public class ConditionEs {
 	private QueryBuilder queryBuilder=null;
 	private BoolQueryBuilder boolQueryBuilder =null;
 	private static final String AND = "and";
 	private static final String OR = "or";
-	public ConditionLogic(){
+	public ConditionEs(){
 		 boolQueryBuilder = QueryBuilders.boolQuery();
 	}
 	/**
@@ -35,7 +35,7 @@ public class ConditionLogic {
 	 * @param field 字段名,可为多个字段数组
 	 * @return
 	 */
-	public ConditionLogic or(ConditionType command,String field) throws IllegalAccessException{
+	public ConditionEs or(ConditionType command,String field) throws IllegalAccessException{
 		Objects.requireNonNull(command,"命令不能为空!");
 		commandHandler(OR,command,field,null);
 		return this;
@@ -48,7 +48,7 @@ public class ConditionLogic {
 	 * @param value 内容
 	 * @return
 	 */
-	public ConditionLogic or(ConditionType command,String field,Object value) throws IllegalAccessException{
+	public ConditionEs or(ConditionType command,String field,Object value) throws IllegalAccessException{
 		Objects.requireNonNull(command,"命令不能为空!");
 		commandHandler(OR,command,field,value);
 		return this;
@@ -60,7 +60,7 @@ public class ConditionLogic {
 	 * @param field 字段名,可为多个字段数组
 	 * @return
 	 */
-	public ConditionLogic and(ConditionType command,String field) throws IllegalAccessException{
+	public ConditionEs and(ConditionType command,String field) throws IllegalAccessException{
 		Objects.requireNonNull(command,"命令不能为空!");
 		commandHandler(AND,command,field,null);
 		return this;
@@ -74,7 +74,7 @@ public class ConditionLogic {
 	 * @return
 	 * @throws Exception 
 	 */
-	public ConditionLogic and(ConditionType command,String field,Object value) throws IllegalAccessException{
+	public ConditionEs and(ConditionType command,String field,Object value) throws IllegalAccessException{
 		Objects.requireNonNull(command,"命令不能为空!");
 		commandHandler(AND,command,field,value);
 		return this;
@@ -159,7 +159,7 @@ public class ConditionLogic {
 	 * @return
 	 */
 	public QueryBuilder toResult(){
-		this.queryBuilder = boolQueryBuilder;
+		this.queryBuilder = Objects.requireNonNull(boolQueryBuilder,"条件不能为空!");
 		return queryBuilder;
 	}
 	/**

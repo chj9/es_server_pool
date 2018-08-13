@@ -32,6 +32,10 @@ public enum EsConnect {
 	 */
 	public static final String HTTPS ="https";
 	/**
+	 * POST
+	 */
+	public static final String POST ="POST";
+	/**
 	 * 空的请求报头
 	 */
 	public static final Header[] EMPTY_HEADERS = new Header[0];

@@ -3,15 +3,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.action.bulk.BackoffPolicy;
 import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.unit.ByteSizeUnit;
+import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.montnets.elasticsearch.client.EsPool;
 import org.montnets.elasticsearch.client.pool.es.EsConnectionPool;
@@ -52,7 +58,7 @@ public class InsertEsHandler implements IBasicHandler{
 	  private EsConnectionPool pool = null;
 	  private static final Logger LOG = LogManager.getLogger(InsertEsHandler.class);
   	@Override
-  	public void builder(EsRequestEntity esRequestEntity){
+  	public void builder(final EsRequestEntity esRequestEntity){
   		Objects.requireNonNull(esRequestEntity, "EsRequestEntity can not null");
   		this.index=Objects.requireNonNull(esRequestEntity.getIndex(), "index can not null");
   		this.type =Objects.requireNonNull(esRequestEntity.getType(), "type can not null");
@@ -88,6 +94,72 @@ public class InsertEsHandler implements IBasicHandler{
 				throw new NullPointerException("如果是设置docAsUpsert为true,则idField必须存在");
 			}
 			return insert(Objects.requireNonNull(map, "map can not null"),idFieldName);
+	}
+
+	private BulkProcessor.Builder builder;
+	/**
+	 * 这个方法暂时用户不到
+	 */
+	@Deprecated
+	public void insertBulkProcess(List<Map<String,Object>> list,String idField) throws InterruptedException{
+		this.builder = BulkProcessor.builder(rhlClient::bulkAsync, new BulkProcessor.Listener() {
+            @Override
+            public void beforeBulk(long executionId, BulkRequest request) {
+                int numberOfActions = request.numberOfActions();
+                LOG.debug("Executing bulk [{}] with {} requests",
+                        executionId, numberOfActions);
+            }
+            @Override
+            public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
+                if (response.hasFailures()) {
+                	LOG.warn("Bulk [{}] executed with failures", executionId);
+                } else {
+                	LOG.debug("Bulk [{}] completed in {} milliseconds",
+                            executionId, response.getTook().getMillis());
+                }
+            }
+            // when failure, will be called
+            @Override
+            public void afterBulk(long executionId, BulkRequest request, Throwable failure) {
+            	LOG.error("Failed to execute bulk", failure);
+            }
+        });
+        // 添加参数
+        builder.setBulkActions(10000);        // 刷新时间
+        builder.setBulkSize(new ByteSizeValue(15L, ByteSizeUnit.MB));// 刷新长度
+        builder.setConcurrentRequests(2);       // 并发度
+        builder.setFlushInterval(TimeValue.timeValueSeconds(10L));      // 刷新周期
+        builder.setBackoffPolicy(BackoffPolicy.constantBackoff(TimeValue.timeValueSeconds(1L), 3));
+        BulkProcessor bulkProcessor = builder.build();
+        String id = null;
+        // 添加批量执行数据
+		 for(Map<String,Object> map:list){
+			    //如果数据为空或者null则跳过
+			 	if(Objects.isNull(map)||!map.isEmpty()){
+			 		continue;
+			 	}
+			 	 if(Objects.nonNull(idField)){		
+					 id = String.valueOf(map.get(idField));
+					 //如果没有这个ID字段名则跳出不给保存
+					 if(PoolUtils.isEmpty(id)||"null".equals(id)){
+						 continue;
+					 }
+			 	 }
+				 if(docAsUpsert){
+					 //存在更新,不存在插入
+					 bulkProcessor.add(new UpdateRequest(index,type,id).doc(map,XContentType.JSON).docAsUpsert(docAsUpsert).retryOnConflict(5));					
+				 }else{
+					 if(Objects.nonNull(id)){
+						 //直接插入,存在直接覆盖
+						 bulkProcessor.add(new IndexRequest(index,type,id).source(map,XContentType.JSON));
+					 }else{
+						 bulkProcessor.add(new IndexRequest(index,type).source(map,XContentType.JSON));
+					 }
+				 }
+		 }
+		 
+        bulkProcessor.awaitClose(30L,TimeUnit.SECONDS);
+        bulkProcessor.close();
 	}
 	/**
 	 * 批量插入ES库

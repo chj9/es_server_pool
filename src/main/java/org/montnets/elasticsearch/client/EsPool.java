@@ -27,7 +27,7 @@ public enum EsPool {
 	ESCLIENT;
 	private EsConnectionPool pool=null;
     public  EsConnectionPool getPool() {
-        return Objects.requireNonNull(pool,"pool can not null!please init pool");
+         	return pool;
      }
 	/**
 	 * 设置池对象
@@ -36,5 +36,13 @@ public enum EsPool {
 	public void setPool(final EsConnectionPool pool) {
 		this.pool = Objects.requireNonNull(pool,"pool can not null!please init pool");
 	}	
+	/**
+	 * 关闭连接池
+	 */
+	public void closePool(){
+		if(pool!=null&&!pool.isClosed()){
+			pool.close();
+		}
+	}
 
 }

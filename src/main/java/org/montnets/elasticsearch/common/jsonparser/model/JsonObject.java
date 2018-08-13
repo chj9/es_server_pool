@@ -53,7 +53,9 @@ public class JsonObject {
 
         return (JsonArray) obj;
     }
-
+    public Map<String,Object> entrySet(){
+    	return map;
+    }
     @Override
     public String toString() {
         return BeautifyJsonUtils.beautify(this);

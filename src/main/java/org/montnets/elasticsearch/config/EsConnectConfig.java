@@ -3,8 +3,12 @@ package org.montnets.elasticsearch.config;
 
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
+
 import org.apache.http.HttpHost;
+import org.montnets.elasticsearch.common.enums.Constans;
 import org.montnets.elasticsearch.common.enums.EsConnect;
 import org.montnets.elasticsearch.common.util.IpHandler;
 
@@ -145,22 +149,17 @@ public class EsConnectConfig implements Serializable{
 		this.clusterName = clusterName;
 	}
 	public  HttpHost[] getNodes() throws IllegalAccessException {
+		
 		if(nodes==null||nodes.length==0){
 			throw new IllegalAccessException("非法节点,nodes为："+Arrays.toString(nodes));
 		}
-		HttpHost[] ips = new HttpHost[nodes.length];
-	   	 for(int i=0;i<nodes.length;i++){
-			 try {
-	    		 String url = nodes[i];
-	    		 IpHandler addr = new  IpHandler();  
-	    	     addr.IpPortFromUrl(url);
-	        	 HttpHost httpHost = new HttpHost(addr.getIp(),addr.getPort(),scheme);
-	        	 ips[i]=httpHost;
-			} catch (Exception e) {
-				throw new RuntimeException("执行异常",e);
-			}
-		 }
-		return ips;
+		ArrayList<HttpHost> hosts = new ArrayList<HttpHost>();
+		Arrays.stream(nodes).forEach(host -> {
+			  	IpHandler addr = new  IpHandler();  
+	    	    addr.IpPortFromUrl(host);
+	            hosts.add(new HttpHost(addr.getIp(),addr.getPort(), scheme));
+	    });
+		return hosts.toArray(new HttpHost[0]);
 	}
 	/**
 	 * 设置集群IP
@@ -169,9 +168,21 @@ public class EsConnectConfig implements Serializable{
 	public  void setNodes(String[] nodes) {
 		this.nodes = nodes;
 	}
+	/**
+	 * 设置集群IP,逗号隔开
+	 * @param nodes 格式为ip:端口  如 127.0.0.1:9200
+	 */
+	public  void setNodes(String nodes) {
+		this.nodes = Objects.requireNonNull(nodes,"nodes can not null").split(Constans.COMMA_SIGN);
+	}
 	@Override
 	public String toString() {
 		return "EsConnectConfig [nodes=" + Arrays.toString(nodes) + ", scheme=" + scheme + ", clusterName="
 				+ clusterName + "]";
+	}
+	public static void main(String[] args) throws IllegalAccessException {
+		EsConnectConfig conn  = new EsConnectConfig();
+		conn.setNodes("127.0.0.1:9200,127.0.0.2:9200");
+		conn.getNodes();
 	}
 }
