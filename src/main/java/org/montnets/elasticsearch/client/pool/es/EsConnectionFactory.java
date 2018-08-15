@@ -10,6 +10,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.montnets.elasticsearch.client.pool.ConnectionFactory;
 import org.montnets.elasticsearch.common.enums.EsConnect;
 import org.montnets.elasticsearch.common.exception.ConnectionException;
+import org.montnets.elasticsearch.common.exception.EsClientMonException;
 import org.montnets.elasticsearch.config.EsConnectConfig;
 
 /**
@@ -115,7 +116,12 @@ class EsConnectionFactory implements ConnectionFactory<RestHighLevelClient> {
 	 */
     @Override
     public PooledObject<RestHighLevelClient> makeObject() throws Exception {
-    	RestHighLevelClient client = this.createConnection();
+    	RestHighLevelClient client = null;
+    	try {
+    		client =this.createConnection();
+		} catch (Exception e) {
+			throw new EsClientMonException("ES连接异常", e);
+		}
         return new DefaultPooledObject<RestHighLevelClient>(client);
     }
     /**
@@ -146,7 +152,8 @@ class EsConnectionFactory implements ConnectionFactory<RestHighLevelClient> {
         		}
 				return status;
 			} catch (IOException e) {
-				throw new ConnectionException("连接失效!");
+				//throw new ConnectionException("连接失效!");
+				throw new EsClientMonException("连接失效!",e);
 			}
         }
         return false;

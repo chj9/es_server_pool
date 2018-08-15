@@ -3,9 +3,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -16,6 +13,7 @@ import org.elasticsearch.script.Script;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.montnets.elasticsearch.client.EsPool;
 import org.montnets.elasticsearch.client.pool.es.EsConnectionPool;
+import org.montnets.elasticsearch.common.exception.EsIndexMonException;
 import org.montnets.elasticsearch.common.util.PoolUtils;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
 import org.montnets.elasticsearch.handle.IBasicHandler;
@@ -54,7 +52,6 @@ public class UpdateEsHandler implements IBasicHandler{
 	  //private	QueryBuilder queryBuilder;
 	  private Script script=null;
 	  private SearchSourceBuilder searchSourceBuilder;
-	  private static final Logger LOG = LogManager.getLogger(UpdateEsHandler.class);
 	@Override
 	public void builder(EsRequestEntity esRequestEntity){
 		Objects.requireNonNull(esRequestEntity, "EsRequestEntity can not null");
@@ -171,6 +168,9 @@ public class UpdateEsHandler implements IBasicHandler{
 	    	 BulkRequest request = new BulkRequest();
 	    	 @SuppressWarnings("unchecked")
 			List<Map<String,Object>> list = (List<Map<String, Object>>) dataObj;
+	    	 if(list==null||list.isEmpty()){
+	    		 throw new NullPointerException("数据集合不能为空");
+	    	 }
 			 for(Map<String,Object> map:list){
 				    //如果数据为空或者null则跳过
 				 	if(Objects.isNull(map)||!map.isEmpty()){
@@ -199,10 +199,9 @@ public class UpdateEsHandler implements IBasicHandler{
 				 }
 			 } 
 			 //如果批量提交的数据和失败的条数一样,则判定为保存失败
-			 if(actionNumTemp==actionNum){
-				 LOG.error("如果批量提交的数据和失败的条数一样,则判定为更新失败!数据失败条数:{}",actionNumTemp);
-				 falg=false;
-			 }
+		if(actionNumTemp==actionNum){
+				 falg = false;
+		}
 	     /************单条插入**************/		 
 	     }else if(dataObj instanceof Map){
 	    	@SuppressWarnings("unchecked")
@@ -217,7 +216,7 @@ public class UpdateEsHandler implements IBasicHandler{
 			}
 	     }
 		} catch (Exception e) {
-			throw e;
+			 throw new EsIndexMonException("数据更新失败",e);
 		}
 	    return falg; 
 	}

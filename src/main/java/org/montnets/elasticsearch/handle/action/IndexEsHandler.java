@@ -5,8 +5,6 @@ import java.util.Objects;
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NStringEntity;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.client.Response;
@@ -36,7 +34,7 @@ import org.montnets.elasticsearch.handle.IBasicHandler;
 * 2018年7月26日     chenhj          v1.0.0               修改原因
 */
 public class IndexEsHandler implements IBasicHandler{
-	private static Logger logger = LogManager.getLogger(IndexEsHandler.class);
+	//private static Logger logger = LogManager.getLogger(IndexEsHandler.class);
 	private RestHighLevelClient client;
 	  /*********对象池*******************/
 	  private EsConnectionPool pool = null;
@@ -58,19 +56,19 @@ public class IndexEsHandler implements IBasicHandler{
 	        Response response = restClient.performRequest("HEAD","/"+index,Collections.<String, String>emptyMap());
 	        isExists ="OK".equals(response.getStatusLine().getReasonPhrase());
 		} catch (IOException e) {
-			logger.error("检查INDEX是否存在报错",e);
-			isExists=false;
+			throw e;
 		}
         return isExists;
     }
- public boolean createIndex(final EsBasicModelConfig esBasicModelConfig){
+ public boolean createIndex(final EsBasicModelConfig esBasicModelConfig) throws IOException{
 		 return create(esBasicModelConfig);
  }
     /**
      * 如果索引库不存在则创建一个
      * @return  成功：true; 失败：false;
+     * @throws IOException 
      */
-  private boolean create(final EsBasicModelConfig esBasicModelConfig){
+  private boolean create(final EsBasicModelConfig esBasicModelConfig) throws IOException{
     	boolean falg = true;
     Objects.requireNonNull(esBasicModelConfig,"esBasicModelConfig is not null");
 	String type = Objects.requireNonNull(esBasicModelConfig.getType(),"type is not null");
@@ -80,9 +78,6 @@ public class IndexEsHandler implements IBasicHandler{
 	//开始创建库
     CreateIndexRequest request = new CreateIndexRequest(index); 
     	try {
-    		if(Objects.isNull(mapping)||Objects.isNull(setting)){
-    			logger.warn("mapping 和 setting 没有自定义设置数据模版与索引设置,强烈建议自定义设置...");
-    		}
     		if(Objects.nonNull(mapping)){
 			//加载数据类型
 	    	request.mapping(type,mapping,XContentType.JSON);
@@ -93,10 +88,8 @@ public class IndexEsHandler implements IBasicHandler{
     		}
 			CreateIndexResponse createIndexResponse = client.indices().create(request);
 			falg = createIndexResponse.isAcknowledged();
-			logger.info("创建索引库"+index+",状态为:"+falg);
 		} catch (IOException e) {
-			logger.error("创建INDEX报错",e);
-			falg=false;
+			throw e;
 		}
     	return falg;
     }
