@@ -72,7 +72,6 @@ public class RestClientFactory {
 	        setConnectTimeOutConfig();
 	        setMutiConnectConfig();
 	        restHighLevelClient = new RestHighLevelClient(builder);
-	        logger.info("Init elasticsearch success!!");
 	    }
 	    /**
 	     * 配置连接时间延时

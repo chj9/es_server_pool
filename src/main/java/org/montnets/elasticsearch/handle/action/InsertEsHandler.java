@@ -9,6 +9,7 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.montnets.elasticsearch.client.EsPool;
 import org.montnets.elasticsearch.client.pool.es.EsConnectionPool;
@@ -141,6 +142,15 @@ public class InsertEsHandler implements IBasicHandler{
 						        BulkItemResponse.Failure failure = bulkItemResponse.getFailure(); 
 						        listFailuresData.add(failure.toString());
 						        actionNumTemp=actionNumTemp+1;
+						        if(PoolUtils.isEmpty(failure.toString())){
+						        	continue;
+						        }
+						        if(failure.toString().contains("es_rejected_execution_exception")){
+						        	throw new EsRejectedExecutionException("ES拒绝请求:"+failure.toString());
+						        }
+						        if(failure.toString().contains("version_conflict_engine_exception")){
+						        	throw new EsRejectedExecutionException("版本冲突:"+failure.toString());
+						        }
 						    }
 						}
 				 }
@@ -165,8 +175,7 @@ public class InsertEsHandler implements IBasicHandler{
 			 	 }
 			 if(docAsUpsert){
 				 //存在更新,不存在插入
-				 UpdateRequest request = new UpdateRequest(index,type,id).doc(map,XContentType.JSON).docAsUpsert(docAsUpsert)
-						 .retryOnConflict(5);	
+				 UpdateRequest request = new UpdateRequest(index,type,id).doc(map,XContentType.JSON).docAsUpsert(docAsUpsert);	
 				 rhlClient.update(request);
 			 }else{
 				 if(Objects.nonNull(id)){
@@ -176,7 +185,10 @@ public class InsertEsHandler implements IBasicHandler{
 				 }
 			 }
 	     }
-		} catch (Exception e) {
+		}catch (EsRejectedExecutionException e) {
+			throw e;
+		}
+		 catch (Exception e) {
 			throw new EsIndexMonException("数据保存失败",e);
 		}
 	    return falg; 

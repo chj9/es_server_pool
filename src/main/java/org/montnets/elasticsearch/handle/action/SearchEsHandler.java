@@ -14,6 +14,9 @@ import org.apache.http.nio.entity.NStringEntity;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.get.MultiGetItemResponse;
+import org.elasticsearch.action.get.MultiGetRequest;
+import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.ClearScrollResponse;
 import org.elasticsearch.action.search.SearchRequest;
@@ -22,6 +25,7 @@ import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.document.DocumentField;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -72,9 +76,9 @@ public class SearchEsHandler implements IBasicHandler{
 	  private Script script=null;
 	  private String scriptName;
 	  /*******只要哪些字段********/
-	  private String[] includeFields =null;
+	  private String[] includeFields =Strings.EMPTY_ARRAY;
 	  /*******排除哪些字段********/
-	  private String[] excludeFields = null;
+	  private String[] excludeFields = Strings.EMPTY_ARRAY;
 	  /*********对象池*******************/
 	  private EsConnectionPool pool = null;
 	  /**
@@ -123,8 +127,12 @@ public class SearchEsHandler implements IBasicHandler{
 	  * @param excludeFields 不需要的字段
 	  */
 	 public SearchEsHandler fetchSource(String[] includeFields,String[] excludeFields){
-		 this.excludeFields=excludeFields;
-		 this.includeFields=includeFields;
+		 if(excludeFields!=null){
+			this.excludeFields=excludeFields; 
+		 }
+		 if(includeFields!=null){
+			  this.includeFields=includeFields;
+		 }
 		 return this;
 	 }
 	 
@@ -148,7 +156,7 @@ public class SearchEsHandler implements IBasicHandler{
 	/**
 	 * 普通查询方法
 	 */
-	public synchronized SearchHits sraech() throws Exception{
+	public  SearchHits sraech() throws Exception{
 		 searchSourceBuilder = new SearchSourceBuilder(); 
 		 try {
 			SearchRequest searchRequest = new SearchRequest(index); 
@@ -192,7 +200,7 @@ public class SearchEsHandler implements IBasicHandler{
 	/**
 	 * 根据ID查询
 	 */
-	public synchronized Map<String, Object>  sraechById(String idvalue) throws Exception{
+	public  Map<String, Object>  sraechById(String idvalue) throws Exception{
 		Objects.requireNonNull(idvalue, "id can not null");
 		Map<String, Object> map =new HashMap<String, Object>(16);
 		 try {
@@ -216,7 +224,7 @@ public class SearchEsHandler implements IBasicHandler{
 	 * @return
 	 * @throws IOException
 	 */
-	public synchronized ScrollEntity<Map<String, Object>> searchScroll(ScrollEntity<Map<String, Object>> scrollEntity) throws IOException{
+	public  ScrollEntity<Map<String, Object>> searchScroll(ScrollEntity<Map<String, Object>> scrollEntity) throws IOException{
 		 List<Map<String, Object>>  list = new ArrayList<Map<String, Object>>();
 		try {
 		 String scrollId = scrollEntity.getScrollId();
@@ -279,7 +287,7 @@ public class SearchEsHandler implements IBasicHandler{
 	 * @return
 	 * @throws IOException
 	 */
-	public synchronized boolean clearScroll(String scrollId) throws IOException{
+	public  boolean clearScroll(String scrollId) throws IOException{
 			Objects.requireNonNull(scrollId, "scrollId can not null");
 			ClearScrollRequest clearScrollRequest = new ClearScrollRequest(); 
 			clearScrollRequest.addScrollId(scrollId);
@@ -288,12 +296,53 @@ public class SearchEsHandler implements IBasicHandler{
 			return succeeded;
 		
 	}
+	/**
+	 * 批量ID查询,类型SQL中的in查询
+	 * @throws Exception 
+	 */
+	public List<Map<String, Object>> searchByIds(List<String> ids) throws Exception{
+	   	if(ids==null||ids.isEmpty()){
+    		throw new NullPointerException("ids can not null and empty");
+    	}
+	   	List<Map<String, Object>> dataList= null;
+ 		try {
+ 			MultiGetRequest request = new MultiGetRequest();
+ 			//需要的字段
+		    //设置过滤字段
+ 			FetchSourceContext fetchSourceContext =
+ 			        new FetchSourceContext(true, includeFields,excludeFields);
+ 			//查询组装
+ 			for(String id:ids){
+ 				request.add(new MultiGetRequest.Item(index,type,id).fetchSourceContext(fetchSourceContext));
+ 			}
+ 			MultiGetResponse response = rhlClient.multiGet(request);
+ 			MultiGetItemResponse[] resultItems = response.getResponses();
+ 			if(resultItems==null||resultItems.length<=0){
+ 				return dataList;
+ 			}
+ 			GetResponse resultGet = null;
+ 			dataList  = new ArrayList<Map<String, Object>>();
+ 			for(MultiGetItemResponse result:resultItems){
+ 				resultGet = result.getResponse();  
+ 				if(resultGet==null){
+ 					continue;
+ 				}
+ 				if(resultGet.isExists()){
+ 					dataList.add(resultGet.getSourceAsMap());
+ 				}else {
+ 				}
+ 			}
+ 		} catch (Exception e) {
+ 			throw e;
+ 		}
+         return dataList;
+	}
     /**  
      * 查询总数
      * @return  
      * @throws Exception  
      */  
-    public synchronized Long count() throws Exception {  
+    public  Long count() throws Exception {  
 	    	 searchSourceBuilder = new SearchSourceBuilder(); 
 		     //是否有自定义条件
 		     if(Objects.nonNull(queryBuilder)){
@@ -316,7 +365,7 @@ public class SearchEsHandler implements IBasicHandler{
      * 根据ID查询数据是否存在
      * @param ID值
      */
-    public synchronized  boolean existsDocById(String idvalue){
+    public  boolean existsDocById(String idvalue){
     	Objects.requireNonNull(idvalue, "id can not null");
     	boolean isExists=false;
  		try {
@@ -328,6 +377,64 @@ public class SearchEsHandler implements IBasicHandler{
  			isExists=false;
  		}
          return isExists;
+    }
+    /**
+     * 根据批量传进来的ID查询数据是否不存在,返回不存在数据列表
+     * @param ids 要查询id列表
+     * @param idFiled ID的字段名
+     * @return 响应不存在的ID
+     * @throws Exception 
+     */ 
+     public  List<String> unExistsDocByIds(List<String> ids,String idFiled) throws Exception{
+    	return existsIds(ids,idFiled,false);
+    }
+    /**
+     * 根据批量传进来的ID查询数据是否存在,返回存在的数据列表
+     * @param ids 要查询id列表
+     * @param idFiled ID的字段名
+     * @return 响应存在的ID
+     * @throws Exception 
+     */
+    public  List<String> existsDocByIds(List<String> ids,String idFiled) throws Exception{
+    	return existsIds(ids,idFiled,true);
+    }
+    public  List<String> existsIds(List<String> ids,String idFiled,boolean dataType) throws Exception{
+    	if(ids==null||ids.isEmpty()){
+    		throw new NullPointerException("id can not null and empty");
+    	}
+ 		try {
+ 			MultiGetRequest request = new MultiGetRequest();
+ 			//需要的字段
+ 			String[] includes = new String[] {Objects.requireNonNull(idFiled, "idFiled can not null")};
+ 			FetchSourceContext fetchSourceContext =
+ 			        new FetchSourceContext(true, includes, Strings.EMPTY_ARRAY);
+ 			//查询组装
+ 			for(String id:ids){
+ 				request.add(new MultiGetRequest.Item(index,type,id).fetchSourceContext(fetchSourceContext));
+ 			}
+ 			MultiGetResponse response = rhlClient.multiGet(request);
+ 			MultiGetItemResponse[] resultItems = response.getResponses();
+ 			if(resultItems==null||resultItems.length<=0){
+ 				return null;
+ 			}
+ 			GetResponse resultGet = null;
+ 			ids.clear();
+ 			for(MultiGetItemResponse result:resultItems){
+ 				//assertNull(result.getFailure());              
+ 				resultGet = result.getResponse();  
+ 				if(resultGet==null){
+ 					continue;
+ 				}
+ 				if(dataType&&resultGet.isExists()){
+ 					ids.add(result.getId());
+ 				}else if(!dataType&&!resultGet.isExists()){
+ 					ids.add(result.getId());
+ 				}
+ 			}
+ 		} catch (Exception e) {
+ 			throw e;
+ 		}
+         return ids;
     }
 	/**
      * 获取当前请求的所有条数	  

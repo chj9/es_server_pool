@@ -1,6 +1,5 @@
 package org.montnets.elasticsearch.client.pool.es;
 
-import java.io.IOException;
 import java.util.Objects;
 
 import org.apache.commons.pool2.PooledObject;
@@ -9,7 +8,6 @@ import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.montnets.elasticsearch.client.pool.ConnectionFactory;
 import org.montnets.elasticsearch.common.enums.EsConnect;
-import org.montnets.elasticsearch.common.exception.ConnectionException;
 import org.montnets.elasticsearch.common.exception.EsClientMonException;
 import org.montnets.elasticsearch.config.EsConnectConfig;
 
@@ -66,50 +64,50 @@ class EsConnectionFactory implements ConnectionFactory<RestHighLevelClient> {
 
     public EsConnectionFactory(final EsConnectConfig esConfig) {
     	if(Objects.isNull(esConfig)){
-    		throw new ConnectionException("[esConfig] can not null!");
+    		throw new EsClientMonException("[esConfig] can not null!");
     	}
         try {
 			this.nodes =esConfig.getNodes();
 		} catch (IllegalAccessException e) {
-			 throw new ConnectionException("[nodes ip] is required !"+e);
+			 throw new EsClientMonException("[nodes ip] is required !"+e);
 		}
         if (Objects.isNull(nodes)||nodes.length==0){
-        	throw new ConnectionException("[nodes ip] is required !");
+        	throw new EsClientMonException("[nodes ip] is required !");
         }
         this.clusterName=esConfig.getClusterName();
         if (Objects.isNull(clusterName)){
-        	throw new ConnectionException("[clusterName] is required !");
+        	throw new EsClientMonException("[clusterName] is required !");
         }
         this.connectTimeoutMillis=esConfig.getConnectTimeoutMillis();
         if (Objects.isNull(connectTimeoutMillis)){
-        	throw new ConnectionException("[connectTimeoutMillis] is required !");
+        	throw new EsClientMonException("[connectTimeoutMillis] is required !");
         }
         this.socketTimeoutMillis=esConfig.getSocketTimeoutMillis();
         if (Objects.isNull(socketTimeoutMillis)){
-        	throw new ConnectionException("[socketTimeoutMillis] is required !");
+        	throw new EsClientMonException("[socketTimeoutMillis] is required !");
         }
         this.connectionRequestTimeoutMillis=esConfig.getConnectionRequestTimeoutMillis();
         if (Objects.isNull(connectionRequestTimeoutMillis)){
-        	throw new ConnectionException("[connectionRequestTimeoutMillis] is required !");
+        	throw new EsClientMonException("[connectionRequestTimeoutMillis] is required !");
         }
         this.maxRetryTimeoutMillis=esConfig.getMaxRetryTimeoutMillis();
         if (Objects.isNull(maxRetryTimeoutMillis)){
-        	throw new ConnectionException("[maxRetryTimeoutMillis] is required !");
+        	throw new EsClientMonException("[maxRetryTimeoutMillis] is required !");
         }
         this.maxConnPerRoute=esConfig.getMaxConnPerRoute();
         if (Objects.isNull(maxConnPerRoute)){
-        	throw new ConnectionException("[maxConnPerRoute] is required !");
+        	throw new EsClientMonException("[maxConnPerRoute] is required !");
         }
         this.maxConnTotal=esConfig.getMaxConnTotal();
         if (Objects.isNull(maxConnTotal)){
-        	throw new ConnectionException("[maxConnTotal] is required !");
+        	throw new EsClientMonException("[maxConnTotal] is required !");
         }
      //   this.username =esConfig.getUsername();
      //  if (username == null)
-          //  throw new ConnectionException("[username] is required !");
+          //  throw new EsClientMonException("[username] is required !");
       //  this.password = esConfig.getPassword();
       //  if (password == null)
-          //  throw new ConnectionException("[password] is required !");
+          //  throw new EsClientMonException("[password] is required !");
     }
 	/**
 	 * 当对象池中没有多余的对象可以用的时候，调用此方法。
@@ -132,6 +130,7 @@ class EsConnectionFactory implements ConnectionFactory<RestHighLevelClient> {
     	RestHighLevelClient client = p.getObject();
         if (Objects.nonNull(client)){
         	client.close();
+        	client = null;
         }
     }
     /**
@@ -144,19 +143,20 @@ class EsConnectionFactory implements ConnectionFactory<RestHighLevelClient> {
     @Override
     public boolean validateObject(PooledObject<RestHighLevelClient> p) {
     	RestHighLevelClient client = p.getObject();
+    	boolean status = false;
     	if (client != null){
         	try {
-        		boolean status = client.ping(EsConnect.EMPTY_HEADERS);
+        		status = client.ping(EsConnect.EMPTY_HEADERS);
         		if(!status){
         			client.close();
         		}
-				return status;
-			} catch (IOException e) {
-				//throw new ConnectionException("连接失效!");
-				throw new EsClientMonException("连接失效!",e);
+        	}catch (Exception e) {
+        		e.printStackTrace();
+				status = false;
+				//throw new EsClientMonException("连接失效!",e);
 			}
         }
-        return false;
+        return status;
     }
 	/**
 	    * 功能描述：激活资源对象

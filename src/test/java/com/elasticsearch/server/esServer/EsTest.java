@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -57,21 +58,46 @@ public class EsTest {
 	 try {
 		 	init();
 			//获得激活数
-			 logger.info("池中激活数:{}",pool.getNumActive());
+		 	System.out.println("池中激活数:{}"+pool.getNumActive());
 			//获得空闲数
-			 logger.info("池中空闲数:{}",pool.getNumIdle());
-		 	//queryCountTest();
-			 deleteTest();
+		 	System.out.println("池中空闲数:{}"+pool.getNumIdle());
+		 	boolean flag = false;
+		 	RestHighLevelClient client = pool.getConnection();
+		// 	client =null;
+		 	//pool.invalidateConnection(client);
+		 	client.close();
+		 	
+		 	queryCountTest();
+		 	
+		 	System.out.println(4561);
+//		 	for(int i=0;i<100;i++){
+//		 		TimeUnit.SECONDS.sleep(2);
+//		 		try {
+//		 		if(!flag){
+//		 			flag=validateEs();
+//		 			if(!flag){
+//		 				continue;
+//		 			}
+//		 		}
+//		 		queryCountTest();
+//				} catch (Exception e) {
+//					flag = false;
+//					e.printStackTrace();
+//				}
+//		 		
+//		 	}
+			// insertTest();
 			//获得激活数
-			 logger.info("池中激活数:{}",pool.getNumActive());
+			 System.out.println("池中激活数:{}"+pool.getNumActive());
 			//获得空闲数
-			 logger.info("池中空闲数:{}",pool.getNumIdle());
+			 System.out.println("池中空闲数:{}"+pool.getNumIdle());
 			
 		}catch (Exception e) {
 			e.printStackTrace();
 			//关闭连接池
 		//	pool.close();
 		}finally {
+			
 			 //连接用完还给连接池,这是必须的,放在finally是为了防止发生异常不能正常把正常连接返回造成堵塞
 			// 被归还的对象的引用，不可以再次归还
 			// java.lang.IllegalStateException: Object has already been retured to this pool or is invalid
@@ -93,17 +119,17 @@ public class EsTest {
 		//池中最大连接数 默认 8
 		config.setMaxTotal(8);
 		//最大空闲数,当超过这个数的时候关闭多余的连接 默认8
-		config.setMaxIdle(8);
+		config.setMaxIdle(2);
 		//最少的空闲连接数  默认0
 		config.setMinIdle(0); 
 		//当连接池资源耗尽时,调用者最大阻塞的时间,超时时抛出异常 单位:毫秒数   -1表示无限等待
-		config.setMaxWaitMillis(10000);
+		config.setMaxWaitMillis(10);
 		// 连接池存放池化对象方式,true放在空闲队列最前面,false放在空闲队列最后  默认为true
 		config.setLifo(true); 
 		// 连接空闲的最小时间,达到此值后空闲连接可能会被移除,默认即为30分钟  
 		config.setMinEvictableIdleTimeMillis(1000L * 60L * 30L); 
 		// 连接耗尽时是否阻塞,默认为true,为false时则抛出异常 
-		config.setBlockWhenExhausted(true); 
+		config.setBlockWhenExhausted(false); 
 		//向调用者输出“链接”资源时，是否检测是有有效，如果无效则从连接池中移除，并尝试获取继续获取。默认为false。建议保持默认值.
 		config.setTestOnBorrow(true);
 		//把资源返回连接池时检查是否有效
@@ -113,7 +139,7 @@ public class EsTest {
 		//设置集群名称
 		esConnectConfig.setClusterName("bigData-cluster");
 		//集群IP数组
-		String [] nodes={"192.169.2.98:9200","192.169.2.188:9200","192.169.2.156:9200","192.169.0.24:9200"};
+		String [] nodes={"192.169.2.98:9200","192.169.2.188:9200","192.169.2.156:9200"};
 		esConnectConfig.setNodes(nodes);
 		//设置集群连接协议,默认http
 		esConnectConfig.setScheme(EsConnect.HTTP);
@@ -169,11 +195,11 @@ public class EsTest {
 			 //执行批量插入
 			 insert.insertBulk(list);
 			 //执行单条插入
-			 insert.insertOne(map);
+			//insert.insertOne(map);
 			 //查看是否有插入失败的数据
 			 logger.info("插入失败数据:{}",insert.getListFailuresData());
 		} catch (Exception e) {
-				// TODO: handle exception
+				e.printStackTrace();
 		}finally{
 			insert.close();
 		}
@@ -201,21 +227,28 @@ public class EsTest {
 				search.close();
 			}
     }
-    public void queryCountTest(){
+    public void queryCountTest() throws Exception{
 		 /***************索引库查询示例1:普通查询****************/	
-    	  EsRequestEntity esRequestEntity = new EsRequestEntity("demo","demo");
+    	  EsRequestEntity esRequestEntity = new EsRequestEntity("pb_sa_phone","pb_sa_phone");
 		  SearchEsHandler search = new SearchEsHandler();
 		  try {
 			 //设置条件
 			 //search.setQueryBuilder(null);
 			 //设置配置
 			 search.builder(esRequestEntity);
+			 List<String> list = new ArrayList<String>();
+			 list.add("8613686875559");
+			 list.add("8618898794524");
+			 list.add("12345");
+			 String [] nodes={"country","fmtype"};
+			 search.fetchSource(nodes, null);
+			 System.out.println(search.searchByIds(list));
 			 //根据条件查询总数
 			 logger.info("查询总数:{}",search.count());
 			 //获取条件DSL,可直接在Kibana中直接运行
 			 logger.info("总数查询DSL:{}",search.toDSL());
 			} catch (Exception e) {
-					// TODO: handle exception
+					throw e;
 			}finally {
 				//使用完关闭,避免造成堵塞
 				search.close();	
@@ -401,8 +434,31 @@ public class EsTest {
 		
     }
     public static void main(String[] args) throws Exception {
+    	System.out.println(123);
 		new EsTest().EsConnectPoolDemo();
 	}
     
-    
+	/**
+	 * 验证ES连接是否正常
+	 */
+	public static  boolean validateEs(){
+		EsConnectionPool pool = Objects.requireNonNull(EsPool.ESCLIENT.getPool(), "连接池未初始化...");
+		RestHighLevelClient client = null;
+		try {
+			client =  EsPool.ESCLIENT.getPool().getConnection();
+			if(client==null){
+				//连接失败
+				return false;
+			}
+			//连接ok
+		} catch (Exception e) {
+			//连接失败
+			throw e;
+		}finally {
+			if(client!=null){
+				pool.returnConnection(client);
+			}
+		}
+		return true;
+	}
 }

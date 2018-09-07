@@ -4,7 +4,7 @@
 
   <groupId>org.montnets.elasticsearch</groupId>
   <artifactId>es-serve-pool</artifactId>
-  <version>1.3</version>
+  <version>1.0.9</version>
   <packaging>jar</packaging>
 
   <name>es-serve-pool</name>
@@ -62,7 +62,7 @@
     <build>  
   		<defaultGoal>compile</defaultGoal>
 		<sourceDirectory>src</sourceDirectory>
-		<finalName>es-serve-pool-1.0</finalName>
+		<finalName>es-serve-pool-1.0.9</finalName>
     <plugins>  
         <plugin>  
                 <groupId>org.apache.maven.plugins</groupId>  

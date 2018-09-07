@@ -8,7 +8,7 @@ import java.io.Serializable;
 import org.apache.commons.pool2.PooledObjectFactory;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import org.montnets.elasticsearch.common.exception.ConnectionException;
+import org.montnets.elasticsearch.common.exception.EsClientMonException;
 
 /**
  * 
@@ -94,7 +94,7 @@ public abstract class PoolBase<T> implements Closeable, Serializable {
         	this.numIdle=internalPool.getNumIdle();
             return internalPool.borrowObject();
         } catch (Exception e) {
-            throw new ConnectionException(
+            throw new EsClientMonException(
                     "Could not get a resource from the pool!"
                     + "Current connection:"+numActive+",Free connection:"+numIdle+",Pool Max connection:"+maxTotal, e);
         }
@@ -111,7 +111,7 @@ public abstract class PoolBase<T> implements Closeable, Serializable {
             try {
                 internalPool.returnObject(resource);
             } catch (Exception e) {
-                throw new ConnectionException(
+                throw new EsClientMonException(
                         "Could not return the resource to the pool", e);
             }
         }
@@ -128,7 +128,7 @@ public abstract class PoolBase<T> implements Closeable, Serializable {
             try {
                 internalPool.invalidateObject(resource);
             } catch (Exception e) {
-                throw new ConnectionException(
+                throw new EsClientMonException(
                         "Could not invalidate the resource to the pool", e);
             }
         }
@@ -214,7 +214,7 @@ public abstract class PoolBase<T> implements Closeable, Serializable {
         try {
             return this.internalPool.isClosed();
         } catch (Exception e) {
-            throw new ConnectionException(
+            throw new EsClientMonException(
                     "Could not check closed from the pool", e);
         }
     }
@@ -229,7 +229,7 @@ public abstract class PoolBase<T> implements Closeable, Serializable {
         try {
             return this.internalPool == null || this.internalPool.isClosed();
         } catch (Exception e) {
-            throw new ConnectionException(
+            throw new EsClientMonException(
                     "Could not check inactived from the pool", e);
         }
     }
@@ -246,7 +246,7 @@ public abstract class PoolBase<T> implements Closeable, Serializable {
                 this.internalPool.addObject();
             }
         } catch (Exception e) {
-            throw new ConnectionException("Error trying to add idle objects", e);
+            throw new EsClientMonException("Error trying to add idle objects", e);
         }
     }
 
@@ -258,7 +258,7 @@ public abstract class PoolBase<T> implements Closeable, Serializable {
         try {
             this.internalPool.clear();
         } catch (Exception e) {
-            throw new ConnectionException("Could not clear the pool", e);
+            throw new EsClientMonException("Could not clear the pool", e);
         }
     }
 
@@ -271,7 +271,7 @@ public abstract class PoolBase<T> implements Closeable, Serializable {
         try {
             this.internalPool.close();
         } catch (Exception e) {
-            throw new ConnectionException("Could not destroy the pool", e);
+            throw new EsClientMonException("Could not destroy the pool", e);
         }
     }
 }
