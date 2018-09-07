@@ -1,12 +1,21 @@
 # ES连接池使用文档
 
-# 一、项目背景
+# 项目背景
 每套项目都写一套连接比较麻烦，而且也不好管理,所以将公共代码抽离出来，还有一些公共的操作抽离出来打成jar包。
 
-# 二、项目实现
+# 项目实现
 项目依赖于elasticsearch官方的rest-high-level-client客户端和common-pool2的对象池技术.将es客户端封装到对象池中.
 程序流程
-# 三、使用方法
+# 版本说明
+V1.0.0 
+   1、初版提交
+V1.0.1 
+   1、修复已知问题
+   2、异常优化：当是ES集群问题的时候抛EsClientMonException异常，当是非集群服务器错误时抛EsIndexMonException异常。
+V1.0.2 
+   1、修复池设置等待时间为-1无限等待时有时会堵塞问题
+   2、新增批量ID查询接口。searchByIds和existsDocByIds接口 批量传入ID，批量响应
+# 使用方法
 初始化连接池
 1、连接池设置
 ```
@@ -276,11 +285,13 @@ update.updateOne(map);
 update.close();}
 ```
 注意:目前更新只能根据ID来更新,还不能自定义条件更新,后续将想办法升级出来的，但是如果需要批量根据条件更新数据,可以使用_update_by_query,如下面这个例子
+```
 POST  mt_msg/mt_msg/_update_by_query?conflicts=proceed
 {	"script": {
 	"lang": "painless",
 	"source":"ctx._source['message']='test'"
 },"query":{"bool":{"must":[{"term":{"msgcode":{"value":0,"boost":1.0}}}] ,"adjust_pure_negative":true,"boost":1.0}}}
+```
 ### 5、删除数据
 数据的删除操作代码如下
 ```
@@ -308,8 +319,9 @@ try {
 GET _tasks?detailed=true&actions=*/delete/byquery
 如果删除过程中需要停止删除线程,可以使用以下命令进行停止.但已删除的数据不会回滚.
 ##取消任务
+```
 POST _tasks/yXFoabQLSJidu-MrLX4lLQ:2229/_cancel
-
+```
 ## 五、条件设置
 因为ES官方给的条件设置比较多，比较繁杂，但往往我们只需要其中一两个,这里我抽离大于gt,大于等于gte,小于lt,小于等于lte,等于equal,不等于unequal,字段存在exist,字段不存在unexist。八个维度的与或查询
 ```
