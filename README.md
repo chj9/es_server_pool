@@ -7,14 +7,14 @@
 项目依赖于elasticsearch官方的rest-high-level-client客户端和common-pool2的对象池技术.将es客户端封装到对象池中.
 程序流程
 # 版本说明
-V1.0.0 
-   1、初版提交
-V1.0.1 
-   1、修复已知问题
-   2、异常优化：当是ES集群问题的时候抛EsClientMonException异常，当是非集群服务器错误时抛EsIndexMonException异常。
-V1.0.2 
-   1、修复池设置等待时间为-1无限等待时有时会堵塞问题
-   2、新增批量ID查询接口。searchByIds和existsDocByIds接口 批量传入ID，批量响应
+V1.0.0<br/>
+   1、初版提交<br/>
+V1.0.1 <br/>
+   1、修复已知问题<br/>
+   2、异常优化：当是ES集群问题的时候抛EsClientMonException异常，当是非集群服务器错误时抛EsIndexMonException异常。<br/>
+V1.0.2 <br/>
+   1、修复池设置等待时间为-1无限等待时有时会堵塞问题<br/>
+   2、新增批量ID查询接口。searchByIds和existsDocByIds接口 批量传入ID，批量响应<br/>
 # 使用方法
 初始化连接池
 1、连接池设置
