@@ -23,10 +23,95 @@ import org.montnets.elasticsearch.common.enums.ConditionType;
 public class ConditionEs {
 	private QueryBuilder queryBuilder=null;
 	private BoolQueryBuilder boolQueryBuilder =null;
-	private static final String AND = "and";
-	private static final String OR = "or";
+	private  final String AND = "and";
+	private  final String OR = "or";
+	private  final String FILTER = "filter";
+	private final float DEFAULT_BOOST = 1.0f;
 	public ConditionEs(){
 		 boolQueryBuilder = QueryBuilders.boolQuery();
+	}
+	/**
+	 * 或逻辑
+	 * 这个方法一般只有命令 exist、unexist使用
+	 * @param command 命令
+	 * @param field 字段名,可为多个字段数组
+	 * @param boost 权重 默认1
+	 * @return
+	 */
+	public ConditionEs or(ConditionType command,String field,float boost) throws IllegalAccessException{
+		Objects.requireNonNull(command,"命令不能为空!");
+		commandHandler(OR,command,field,null,boost);
+		return this;
+	} 
+	/**
+	 * 或逻辑
+	 * 这个方法一般是 gt、gte、lt、lte、equal、unequal使用
+	 * @param command 命令
+	 * @param field 字段名
+	 * @param value 内容
+	 * @param boost 权重 默认1
+	 * @return
+	 */
+	public ConditionEs or(ConditionType command,String field,Object value,float boost) throws IllegalAccessException{
+		Objects.requireNonNull(command,"命令不能为空!");
+		commandHandler(OR,command,field,value,boost);
+		return this;
+	} 
+	/**
+	 * 与逻辑
+	 * 这个方法一般只有命令 exist、unexist使用
+	 * @param command 命令
+	 * @param field 字段名,可为多个字段数组
+	 * @param boost 权重 默认1
+	 * @return
+	 */
+	public ConditionEs and(ConditionType command,String field,float boost) throws IllegalAccessException{
+		Objects.requireNonNull(command,"命令不能为空!");
+		commandHandler(AND,command,field,null,boost);
+		return this;
+	}
+	/**
+	 * 与逻辑
+	 * 这个方法一般只有命令 exist、unexist使用
+	 * @param command 命令
+	 * @param field 字段名,可为多个字段数组
+	 * @param boost 权重 默认1
+	 * @return
+	 */
+	public ConditionEs filter(ConditionType command,String field,float boost) throws IllegalAccessException{
+		Objects.requireNonNull(command,"命令不能为空!");
+		commandHandler(FILTER,command,field,null,boost);
+		return this;
+	}
+	/**
+	 * 与逻辑
+	 * 这个方法一般是 gt、gte、lt、lte、equal、unequal使用
+	 * @param command 命令
+	 * @param field 字段名
+	 * @param value 内容
+	 * @param boost 权重 默认1
+	 * @return
+	 * @throws Exception 
+	 */
+	public ConditionEs and(ConditionType command,String field,Object value,float boost) throws IllegalAccessException{
+		Objects.requireNonNull(command,"命令不能为空!");
+		commandHandler(AND,command,field,value,boost);
+		return this;
+	}
+	/**
+	 * 与逻辑
+	 * 这个方法一般是 gt、gte、lt、lte、equal、unequal使用
+	 * @param command 命令
+	 * @param field 字段名
+	 * @param value 内容
+	 * @param boost 权重 默认1
+	 * @return
+	 * @throws Exception 
+	 */
+	public ConditionEs filter(ConditionType command,String field,Object value,float boost) throws IllegalAccessException{
+		Objects.requireNonNull(command,"命令不能为空!");
+		commandHandler(FILTER,command,field,value,boost);
+		return this;
 	}
 	/**
 	 * 或逻辑
@@ -37,7 +122,7 @@ public class ConditionEs {
 	 */
 	public ConditionEs or(ConditionType command,String field) throws IllegalAccessException{
 		Objects.requireNonNull(command,"命令不能为空!");
-		commandHandler(OR,command,field,null);
+		commandHandler(OR,command,field,null,DEFAULT_BOOST);
 		return this;
 	} 
 	/**
@@ -50,7 +135,7 @@ public class ConditionEs {
 	 */
 	public ConditionEs or(ConditionType command,String field,Object value) throws IllegalAccessException{
 		Objects.requireNonNull(command,"命令不能为空!");
-		commandHandler(OR,command,field,value);
+		commandHandler(OR,command,field,value,DEFAULT_BOOST);
 		return this;
 	} 
 	/**
@@ -62,7 +147,34 @@ public class ConditionEs {
 	 */
 	public ConditionEs and(ConditionType command,String field) throws IllegalAccessException{
 		Objects.requireNonNull(command,"命令不能为空!");
-		commandHandler(AND,command,field,null);
+		commandHandler(AND,command,field,null,DEFAULT_BOOST);
+		return this;
+	}
+	/**
+	 * 与逻辑
+	 * 这个方法一般只有命令 exist、unexist使用
+	 * @param command 命令
+	 * @param field 字段名,可为多个字段数组
+	 * @return
+	 */
+	public ConditionEs filter(ConditionType command,String field) throws IllegalAccessException{
+		Objects.requireNonNull(command,"命令不能为空!");
+		commandHandler(FILTER,command,field,null,DEFAULT_BOOST);
+		return this;
+	}
+	/**
+	 * 与逻辑
+	 * 这个方法一般是 gt、gte、lt、lte、equal、unequal使用
+	 * @param command 命令
+	 * @param field 字段名
+	 * @param value 内容
+	 * @param boost 权重 默认1
+	 * @return
+	 * @throws Exception 
+	 */
+	public ConditionEs and(ConditionType command,String field,Object value) throws IllegalAccessException{
+		Objects.requireNonNull(command,"命令不能为空!");
+		commandHandler(AND,command,field,value,DEFAULT_BOOST);
 		return this;
 	}
 	/**
@@ -74,9 +186,9 @@ public class ConditionEs {
 	 * @return
 	 * @throws Exception 
 	 */
-	public ConditionEs and(ConditionType command,String field,Object value) throws IllegalAccessException{
+	public ConditionEs filter(ConditionType command,String field,Object value) throws IllegalAccessException{
 		Objects.requireNonNull(command,"命令不能为空!");
-		commandHandler(AND,command,field,value);
+		commandHandler(FILTER,command,field,value,DEFAULT_BOOST);
 		return this;
 	}
 	/**
@@ -85,8 +197,9 @@ public class ConditionEs {
 	 * @param command 命令
  	 * @param field 字段
 	 * @param value 内容
+	 * @param boost 权重 默认1
 	 */
-	private void commandHandler(String logic,ConditionType command,String field,Object value) throws IllegalAccessException{
+	private void commandHandler(String logic,ConditionType command,String field,Object value,float boost) throws IllegalAccessException{
 		if(AND.equals(logic)){
 			
 		}else if(OR.equals(logic)){
@@ -97,57 +210,71 @@ public class ConditionEs {
 		switch (command) {
 			case gt:
 				    if(AND.equals(logic)){
-				    	boolQueryBuilder.must(QueryBuilders.rangeQuery(field).gt(value));
-				    }else if(OR.equals(logic)){
-				    	boolQueryBuilder.should(QueryBuilders.rangeQuery(field).gt(value));
+				    	boolQueryBuilder.must(QueryBuilders.rangeQuery(field).gt(value).boost(boost));
+				    }else if(FILTER.equals(logic)){
+				    	boolQueryBuilder.filter(QueryBuilders.rangeQuery(field).gt(value).boost(boost));
+				    }
+				    else if(OR.equals(logic)){
+				    	boolQueryBuilder.should(QueryBuilders.rangeQuery(field).gt(value).boost(boost));
 				    }
 					break;
 			case gte:
 				    if(AND.equals(logic)){
-				    	boolQueryBuilder.must(QueryBuilders.rangeQuery(field).gte(value));
-				    }else if(OR.equals(logic)){
-				    	boolQueryBuilder.should(QueryBuilders.rangeQuery(field).gte(value));
+				    	boolQueryBuilder.must(QueryBuilders.rangeQuery(field).gte(value).boost(boost));
+				    }else if(FILTER.equals(logic)){
+				    	boolQueryBuilder.filter(QueryBuilders.rangeQuery(field).gte(value).boost(boost));
+				    }
+				    else if(OR.equals(logic)){
+				    	boolQueryBuilder.should(QueryBuilders.rangeQuery(field).gte(value).boost(boost));
 				    }
 					break;
 			case lt:
 				    if(AND.equals(logic)){
-				    	boolQueryBuilder.must(QueryBuilders.rangeQuery(field).lt(value));
+				    	boolQueryBuilder.must(QueryBuilders.rangeQuery(field).lt(value).boost(boost));
+				    }else if(FILTER.equals(logic)){
+				    	boolQueryBuilder.filter(QueryBuilders.rangeQuery(field).lt(value).boost(boost));
 				    }else if(OR.equals(logic)){
-				    	boolQueryBuilder.should(QueryBuilders.rangeQuery(field).lt(value));
+				    	boolQueryBuilder.should(QueryBuilders.rangeQuery(field).lt(value).boost(boost));
 				    }
 				    break;
 			case lte: 
 				    if(AND.equals(logic)){
-				    	boolQueryBuilder.must(QueryBuilders.rangeQuery(field).lte(value));
+				    	boolQueryBuilder.must(QueryBuilders.rangeQuery(field).lte(value).boost(boost));
+				    }else if(FILTER.equals(logic)){
+				    	boolQueryBuilder.filter(QueryBuilders.rangeQuery(field).lte(value).boost(boost));
 				    }else if(OR.equals(logic)){
-				    	boolQueryBuilder.should(QueryBuilders.rangeQuery(field).lte(value));
+				    	boolQueryBuilder.should(QueryBuilders.rangeQuery(field).lte(value).boost(boost));
 				    }
 					break;
 			case equal:
 					if(AND.equals(logic)){
-						boolQueryBuilder.must(QueryBuilders.termQuery(field,value));
+						boolQueryBuilder.must(QueryBuilders.termQuery(field,value).boost(boost));
+				    }else if(FILTER.equals(logic)){
+				    	boolQueryBuilder.filter(QueryBuilders.termQuery(field,value).boost(boost));
 				    }else if(OR.equals(logic)){
-				    	boolQueryBuilder.should(QueryBuilders.termQuery(field,value));
+				    	boolQueryBuilder.should(QueryBuilders.termQuery(field,value).boost(boost));
 				    }
 					break;
 			case unequal:
-					if(AND.equals(logic)){
-						 boolQueryBuilder.must(QueryBuilders.existsQuery(field));
-						 boolQueryBuilder.mustNot(QueryBuilders.termQuery(field,value));
+					if(AND.equals(logic)||FILTER.equals(logic)){
+						 boolQueryBuilder.must(QueryBuilders.existsQuery(field).boost(boost));
+						 boolQueryBuilder.mustNot(QueryBuilders.termQuery(field,value).boost(boost));
 				    }else if(OR.equals(logic)){
-						 boolQueryBuilder.mustNot(QueryBuilders.termQuery(field,value));
+						 boolQueryBuilder.mustNot(QueryBuilders.termQuery(field,value).boost(boost));
 				    }
 					break;
 			case exist:
 					if(AND.equals(logic)){
-						 boolQueryBuilder.must(QueryBuilders.existsQuery(field));
+						 boolQueryBuilder.must(QueryBuilders.existsQuery(field).boost(boost));
+				    }else if(FILTER.equals(logic)){
+				    	boolQueryBuilder.filter(QueryBuilders.existsQuery(field).boost(boost));
 				    }else if(OR.equals(logic)){
-						 boolQueryBuilder.should(QueryBuilders.existsQuery(field));
+						 boolQueryBuilder.should(QueryBuilders.existsQuery(field).boost(boost));
 				    }
 					break;
 			case unexist:
-					if(AND.equals(logic)){
-						 boolQueryBuilder.mustNot(QueryBuilders.existsQuery(field));
+					if(AND.equals(logic)||FILTER.equals(logic)){
+						 boolQueryBuilder.mustNot(QueryBuilders.existsQuery(field).boost(boost));
 				    }
 					break;
 			default:
