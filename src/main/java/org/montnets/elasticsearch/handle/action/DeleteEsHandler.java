@@ -1,8 +1,11 @@
 package org.montnets.elasticsearch.handle.action;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
@@ -10,19 +13,24 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NStringEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseListener;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.montnets.elasticsearch.client.EsPool;
 import org.montnets.elasticsearch.client.pool.es.EsConnectionPool;
+import org.montnets.elasticsearch.common.enums.Constans;
 import org.montnets.elasticsearch.common.enums.EsConnect;
-import org.montnets.elasticsearch.common.util.PoolUtils;
+import org.montnets.elasticsearch.common.util.Utils;
 import org.montnets.elasticsearch.condition.ConditionEs;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
 import org.montnets.elasticsearch.handle.IBasicHandler;
@@ -52,12 +60,14 @@ public class DeleteEsHandler implements IBasicHandler{
 	  private static Logger logger = LogManager.getLogger(DeleteEsHandler.class);
 	  /*********对象池*******************/
 	  private EsConnectionPool pool = null;
+	  private String poolId = Constans.DEFAULT_POOL_ID;
   	@Override
   	public void builder(EsRequestEntity esRequestEntity){
   		Objects.requireNonNull(esRequestEntity, "EsRequestEntity can not null");
   		this.index=Objects.requireNonNull(esRequestEntity.getIndex(), "index can not null");
   		this.type =Objects.requireNonNull(esRequestEntity.getType(), "type can not null");
-		this.pool=EsPool.ESCLIENT.getPool();
+  		this.poolId=esRequestEntity.getPoolId();
+  		this.pool=EsPool.ESCLIENT.getPool(poolId);
 		this.rhlClient=pool.getConnection();
   	}
 	 /**
@@ -75,6 +85,57 @@ public class DeleteEsHandler implements IBasicHandler{
 			DeleteRequest request = new DeleteRequest(index,type,id); 
 			DeleteResponse deleteResponse =  rhlClient.delete(request);
 			return deleteResponse.status()==RestStatus.OK;
+	}
+	
+	List<String> listFailures = null;
+	/**
+	 * 根据ID批量删除
+	 * @param ids id集合
+	 * @return
+	 * @throws Exception
+	 */
+	public  boolean  delByIds(Set<String> ids) throws Exception{
+		boolean flag = true;
+		BulkRequest requestBulk = new BulkRequest();
+		for (String id : ids) {  
+			DeleteRequest request = new DeleteRequest(index,type,id); 
+			requestBulk.add(request);
+		}  
+		 int actionNum = requestBulk.numberOfActions();
+		 int actionNumTemp=0;
+		 //如果不为空就写入
+		 if(actionNum>0){
+			 BulkResponse bulkResponse = rhlClient.bulk(requestBulk);
+			 //响应失败的数据过来写入日志
+			 if(bulkResponse.hasFailures()){
+				 listFailures = new ArrayList<String>();
+				 for (BulkItemResponse bulkItemResponse : bulkResponse) {
+					    if (bulkItemResponse.isFailed()) { 
+					        BulkItemResponse.Failure failure = bulkItemResponse.getFailure(); 
+					        listFailures.add(failure.toString());
+					        actionNumTemp=actionNumTemp+1;
+					        if(Utils.isEmpty(failure.toString())){
+					        	continue;
+					        }
+					        if(failure.toString().contains("es_rejected_execution_exception")){
+					        	throw new EsRejectedExecutionException("ES拒绝请求:"+failure.toString());
+					        }
+					        if(failure.toString().contains("version_conflict_engine_exception")){
+					        	throw new EsRejectedExecutionException("版本冲突:"+failure.toString());
+					        }
+					    }
+					}
+			 }
+		 } 
+		 //如果批量提交的数据和失败的条数一样,则判定为保存失败
+		 if(actionNumTemp==actionNum){
+			 flag = false;
+		 }
+	     return flag;
+	}
+	
+	public List<String> delFailure() {
+		return listFailures;
 	}
 	/**
 	 * 根据搜索内容删除数据 
@@ -116,7 +177,7 @@ public class DeleteEsHandler implements IBasicHandler{
 				    	//java.io.IOException: request retries exceeded max retry timeout [30000]
 				    	if(exception instanceof IOException){
 				    		String msg = exception.getMessage();
-				    		if(PoolUtils.isNotEmpty(msg)){
+				    		if(Utils.isNotEmpty(msg)){
 				    			//超时不处理
 				    			if(msg.contains("request retries exceeded max retry timeout [30000]")){
 				    				logger.debug("超时不处理:{}",searchSourceBuilder.toString());

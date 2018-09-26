@@ -28,6 +28,7 @@ import org.elasticsearch.search.aggregations.metrics.sum.Sum;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.montnets.elasticsearch.client.EsPool;
 import org.montnets.elasticsearch.client.pool.es.EsConnectionPool;
+import org.montnets.elasticsearch.common.enums.Constans;
 import org.montnets.elasticsearch.condition.ConditionEs;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
 import org.montnets.elasticsearch.handle.IBasicHandler;
@@ -56,12 +57,14 @@ public class AggregationEsHandler implements IBasicHandler{
 	  private  AggregationBuilder aggregationBuilder;
 	  /*********对象池*******************/
 	  private EsConnectionPool pool = null;
+	  private String poolId = Constans.DEFAULT_POOL_ID;
   	@Override
   	public void builder(EsRequestEntity esRequestEntity){
   		Objects.requireNonNull(esRequestEntity, "EsRequestEntity can not null");
   		this.index=Objects.requireNonNull(esRequestEntity.getIndex(), "index can not null");
   		this.type =Objects.requireNonNull(esRequestEntity.getType(), "type can not null");
-		this.pool=EsPool.ESCLIENT.getPool();
+  		this.poolId=esRequestEntity.getPoolId();
+  		this.pool=EsPool.ESCLIENT.getPool(poolId);
 		this.rhlClient=pool.getConnection();
   		
   	}

@@ -8,13 +8,15 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.montnets.elasticsearch.client.EsPool;
 import org.montnets.elasticsearch.client.pool.es.EsConnectionPool;
+import org.montnets.elasticsearch.common.enums.Constans;
 import org.montnets.elasticsearch.common.exception.EsIndexMonException;
-import org.montnets.elasticsearch.common.util.PoolUtils;
+import org.montnets.elasticsearch.common.util.Utils;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
 import org.montnets.elasticsearch.handle.IBasicHandler;
 /**
@@ -52,12 +54,15 @@ public class UpdateEsHandler implements IBasicHandler{
 	  //private	QueryBuilder queryBuilder;
 	  private Script script=null;
 	  private SearchSourceBuilder searchSourceBuilder;
+	  private String poolId = Constans.DEFAULT_POOL_ID;
 	@Override
 	public void builder(EsRequestEntity esRequestEntity){
 		Objects.requireNonNull(esRequestEntity, "EsRequestEntity can not null");
 		this.index=Objects.requireNonNull(esRequestEntity.getIndex(), "index can not null");
 		this.type =Objects.requireNonNull(esRequestEntity.getType(), "type can not null");
-		this.pool=EsPool.ESCLIENT.getPool();
+		this.idFieldName=esRequestEntity.getIdFieldName();
+		this.poolId=esRequestEntity.getPoolId();
+		this.pool=EsPool.ESCLIENT.getPool(poolId);
 		this.rhlClient=pool.getConnection();
 	}
 	/**
@@ -77,15 +82,6 @@ public class UpdateEsHandler implements IBasicHandler{
 //		 this.queryBuilder = queryBuilder;
 //		 return this;
 //	 }
-	/**
-	 * 设置ID字段名 从map中get
-	 * @param idFieldName
-	 * @return
-	 */
-	public UpdateEsHandler setIdFieldName(String idFieldName) {
-		this.idFieldName = idFieldName;
-		return this;
-	}
 	/**
 	 * 设置脚本更新
 	*/
@@ -111,49 +107,6 @@ public class UpdateEsHandler implements IBasicHandler{
 	public  boolean updateOne(Map<String,Object> map) throws Exception{
 		return update(Objects.requireNonNull(map, "map can not null"),idFieldName);
 	}
-	/**
-	 * 根据条件更新 条件通过setQueryBuilder设置
-	 * @param isSync 是否同步更新   true：同步更新   false:异步更新
-	 * 如果一次更新数据量大建议使用异步更新
-	 * @return
-	 * @throws Exception 
-	 */
-//	public boolean updateByQuery(boolean isSync) throws Exception{
-//		boolean falg=true;
-//		 try {
-//			 searchSourceBuilder = new SearchSourceBuilder(); 
-//		     //是否有自定义条件
-//		     if(queryBuilder==null){
-//		    	 throw new RuntimeException("请设置更新条数,或者你是想更新整个库?");
-//		     }
-//		     if(script!=null){
-//		    	 searchSourceBuilder.scriptField("", script);
-//		     }
-//		     searchSourceBuilder.query(queryBuilder);
-//		     //取低级客户端API来执行这步操作
-//		     RestClient restClient = rhlClient.getLowLevelClient();
-//			 String endPoint = "/" + index + "/" + type +"/_update_by_query?conflicts=proceed&scroll_size=100000&timeout=1000s";
-//			 //删除的条件
-//			 String source = searchSourceBuilder.toString();
-//			 HttpEntity entity = new NStringEntity(source, ContentType.APPLICATION_JSON);
-//			 if(isSync) {
-//				
-//			     Response response = restClient.performRequest("POST", endPoint,Collections.<String, String> emptyMap(),entity);
-//			     falg = response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
-//			     return falg;
-//			 }
-//			 //异步执行
-//			 RecordUpdate reLog = new RecordUpdate();
-//			 reLog.setCommand(endPoint);
-//			 reLog.setEntity(entity);
-//			 reLog.setRestClient(restClient);
-//			 reLog.setLogStr(searchSourceBuilder.toString());
-//			 new Thread(reLog, "UPDATE_"+System.currentTimeMillis()).start();
-//			 return true;
-//		 } catch (Exception e) {			
-//				throw e;
-//		}
-//	}
 	/**
 	 * 更新ES库
 	 * @param list 需要更新的数据列表
@@ -186,7 +139,7 @@ public class UpdateEsHandler implements IBasicHandler{
 			 //如果不为空就写入
 			 if(actionNum>0){
 				 BulkResponse bulkResponse = rhlClient.bulk(request);
-				 //响应失败的数据过来写入日志
+				 //响应失败的数据过来写入日志 
 				 if(bulkResponse.hasFailures()){
 					 listFailuresData = new ArrayList<String>();
 					 for (BulkItemResponse bulkItemResponse : bulkResponse) {
@@ -194,6 +147,12 @@ public class UpdateEsHandler implements IBasicHandler{
 						        BulkItemResponse.Failure failure = bulkItemResponse.getFailure(); 
 						        listFailuresData.add(failure.toString());
 						        actionNumTemp=actionNumTemp+1;
+						        if(failure.toString().contains("es_rejected_execution_exception")){
+						        	throw new EsRejectedExecutionException("ES拒绝请求:"+failure.toString());
+						        }
+						        if(failure.toString().contains("version_conflict_engine_exception")){
+						        	throw new EsRejectedExecutionException("版本冲突:"+failure.toString());
+						        }
 						    }
 						}
 				 }
@@ -230,7 +189,7 @@ public class UpdateEsHandler implements IBasicHandler{
 			String id = null;
 			id = String.valueOf(map.get(idField));
 			//如果没有这个ID字段名则跳出不给保存
-			if(PoolUtils.isEmpty(id)||"null".equals(id)){
+			if(Utils.isEmpty(id)||"null".equals(id)){
 				 return null;
 			}
 			UpdateRequest updateRequest = new  UpdateRequest(index,type,id);

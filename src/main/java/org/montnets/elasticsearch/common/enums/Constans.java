@@ -56,7 +56,7 @@ public enum Constans {
      /**
   	 * 程序版本
   	 */
-  	public  static final String VERSION = "V1.0";
+  	public  static final String VERSION = "V1.1";
   	
   	 /**
   	  * 程序信息
@@ -66,5 +66,9 @@ public enum Constans {
   	  * ES版本
   	  */
   	 public static final String ES_VERSION=Version.CURRENT.toString();
+  	/**
+  	 * 默认集群ID 
+  	 */
+    public static final String DEFAULT_POOL_ID = "ES-POOL1";
      
 }

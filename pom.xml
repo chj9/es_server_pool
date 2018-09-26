@@ -4,7 +4,7 @@
 
   <groupId>org.montnets.elasticsearch</groupId>
   <artifactId>es-serve-pool</artifactId>
-  <version>1.0.9</version>
+  <version>1.1.0</version>
   <packaging>jar</packaging>
 
   <name>es-serve-pool</name>
@@ -12,7 +12,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    	<es.version>6.3.2</es.version>
+    	<es.version>6.4.1</es.version>
     	<httpasyncclient>4.1.4</httpasyncclient>
     	<log4j>2.9.1</log4j>
     	<commons-pool>2.6.0</commons-pool>
@@ -48,21 +48,10 @@
 		    <version>${commons-pool}</version>
 		</dependency>
   </dependencies>
-  <distributionManagement>
-    <repository>
-        <id>releases</id>
-        <url>http://192.169.2.98:9999/repository/montnets/</url>
-    </repository>
-      <!-- 发布到 快照版本的仓库，即 测试版本仓库 -->
-	  <snapshotRepository>
-	    <id>snapshots</id>
-	    <url>http://192.169.2.98:9999/repository/montnets_snapshots/</url>
-	  </snapshotRepository>
-	</distributionManagement>
     <build>  
   		<defaultGoal>compile</defaultGoal>
 		<sourceDirectory>src</sourceDirectory>
-		<finalName>es-serve-pool-1.0.9</finalName>
+		<finalName>es-serve-pool-1.1.0</finalName>
     <plugins>  
         <plugin>  
                 <groupId>org.apache.maven.plugins</groupId>  

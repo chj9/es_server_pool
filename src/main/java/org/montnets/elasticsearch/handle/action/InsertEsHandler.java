@@ -15,7 +15,7 @@ import org.montnets.elasticsearch.client.EsPool;
 import org.montnets.elasticsearch.client.pool.es.EsConnectionPool;
 import org.montnets.elasticsearch.common.enums.Constans;
 import org.montnets.elasticsearch.common.exception.EsIndexMonException;
-import org.montnets.elasticsearch.common.util.PoolUtils;
+import org.montnets.elasticsearch.common.util.Utils;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
 import org.montnets.elasticsearch.handle.IBasicHandler;
 /**
@@ -38,7 +38,12 @@ public class InsertEsHandler implements IBasicHandler{
 	  /**索引库*/
 	  private String index;
 	  /**索引表*/
-	  private String type;	  
+	  private String type;	
+	  /**
+	   * 集群ID
+	   */
+	  private String poolId = Constans.DEFAULT_POOL_ID;
+	  
 	  private RestHighLevelClient rhlClient;
 	  private boolean docAsUpsert=false;
 	  /**
@@ -54,7 +59,9 @@ public class InsertEsHandler implements IBasicHandler{
   		Objects.requireNonNull(esRequestEntity, "EsRequestEntity can not null");
   		this.index=Objects.requireNonNull(esRequestEntity.getIndex(), "index can not null");
   		this.type =Objects.requireNonNull(esRequestEntity.getType(), "type can not null");
-		this.pool=EsPool.ESCLIENT.getPool();
+		this.idFieldName=esRequestEntity.getIdFieldName();
+  		this.poolId=esRequestEntity.getPoolId();
+		this.pool=EsPool.ESCLIENT.getPool(poolId);
 		this.rhlClient=pool.getConnection();
   	}
 	/**
@@ -71,6 +78,7 @@ public class InsertEsHandler implements IBasicHandler{
 	 * @param idFieldName
 	 * @return
 	 */
+	@Deprecated
 	public InsertEsHandler setIdFieldName(String idFieldName) {
 		this.idFieldName = Objects.requireNonNull(idFieldName,"idFieldName can not null");
 		return this;
@@ -113,7 +121,7 @@ public class InsertEsHandler implements IBasicHandler{
 				 	 if(Objects.nonNull(idField)){		
 						 id = String.valueOf(map.get(idField));
 						 //如果没有这个ID字段名则跳出不给保存
-						 if(PoolUtils.isEmpty(id)||"null".equals(id)){
+						 if(Utils.isEmpty(id)||"null".equals(id)){
 							 continue;
 						 }
 				 	 }
@@ -129,6 +137,7 @@ public class InsertEsHandler implements IBasicHandler{
 						 }
 					 }
 			 }
+			  
 			 int actionNum = request.numberOfActions();
 			 int actionNumTemp=0;
 			 //如果不为空就写入
@@ -140,9 +149,9 @@ public class InsertEsHandler implements IBasicHandler{
 					 for (BulkItemResponse bulkItemResponse : bulkResponse) {
 						    if (bulkItemResponse.isFailed()) { 
 						        BulkItemResponse.Failure failure = bulkItemResponse.getFailure(); 
-						        listFailuresData.add(failure.toString());
-						        actionNumTemp=actionNumTemp+1;
-						        if(PoolUtils.isEmpty(failure.toString())){
+						      //  listFailuresData.add(failure.toString());
+						       // actionNumTemp=actionNumTemp+1;
+						        if(Utils.isEmpty(failure.toString())){
 						        	continue;
 						        }
 						        if(failure.toString().contains("es_rejected_execution_exception")){
@@ -169,7 +178,7 @@ public class InsertEsHandler implements IBasicHandler{
 			}
 			 	 if(Objects.nonNull(idField)){		
 					 id = String.valueOf(map.get(idField));
-					 if(PoolUtils.isEmpty(id)||Constans.NULL.equals(id)){
+					 if(Utils.isEmpty(id)||Constans.NULL.equals(id)){
 						 throw new EsIndexMonException("主键必须设值!!!当前主键"+idFieldName+"="+id);
 					 }
 			 	 }

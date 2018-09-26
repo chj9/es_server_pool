@@ -50,7 +50,7 @@ import org.montnets.elasticsearch.handle.action.UpdateEsHandler;
  */
 public class EsTest {
 	private static Logger logger = LogManager.getLogger(EsTest.class);
-	EsConnectionPool pool =null;
+	//EsConnectionPool pool =null;
        //连接池对象 = 连接池所维护的对象的创建工厂 + 连接池对象配置  
     public void EsConnectPoolDemo() throws Exception {
 
@@ -58,18 +58,21 @@ public class EsTest {
 	 try {
 		 	init();
 			//获得激活数
-		 	System.out.println("池中激活数:{}"+pool.getNumActive());
+		 	//System.out.println("池中激活数:{}"+pool.getNumActive());
 			//获得空闲数
-		 	System.out.println("池中空闲数:{}"+pool.getNumIdle());
-		 	boolean flag = false;
-		 	RestHighLevelClient client = pool.getConnection();
+		 //	System.out.println("池中空闲数:{}"+pool.getNumIdle());
+		 	//boolean flag = false;
+		 //	RestHighLevelClient client1= EsPool.ESCLIENT.getPool("demo1").getConnection();
+		 //	RestHighLevelClient client2 = EsPool.ESCLIENT.getPool("demo2").getConnection();
 		// 	client =null;
 		 	//pool.invalidateConnection(client);
-		 	client.close();
-		 	
+		 //	System.out.println(client1.info(EsConnect.EMPTY_HEADERS).getNodeName());
+		 	//System.out.println(client2.info(EsConnect.EMPTY_HEADERS).getNodeName());
+		 //	client1.close();
+		 	//client2.close();
 		 	queryCountTest();
 		 	
-		 	System.out.println(4561);
+		 	System.out.println(45161);
 //		 	for(int i=0;i<100;i++){
 //		 		TimeUnit.SECONDS.sleep(2);
 //		 		try {
@@ -88,9 +91,9 @@ public class EsTest {
 //		 	}
 			// insertTest();
 			//获得激活数
-			 System.out.println("池中激活数:{}"+pool.getNumActive());
+			// System.out.println("池中激活数:{}"+pool.getNumActive());
 			//获得空闲数
-			 System.out.println("池中空闲数:{}"+pool.getNumIdle());
+			// System.out.println("池中空闲数:{}"+pool.getNumIdle());
 			
 		}catch (Exception e) {
 			e.printStackTrace();
@@ -111,9 +114,14 @@ public class EsTest {
     }
     public void init(){
     	/**************连接池设置*******************/
+    	EsConnectionPool pool1 =EsPool.ESCLIENT.getPool("demo1");
+    	EsConnectionPool pool2 =EsPool.ESCLIENT.getPool("demo2");
     	//如果池已经初始化,先关闭再初始化.
-    	if(pool!=null){
-    				pool.close();
+    	if(pool1!=null){
+    				pool1.close();
+    	}
+    	if(pool2!=null){
+			pool2.close();
     	}
 		PoolConfig config = new PoolConfig();
 		//池中最大连接数 默认 8
@@ -134,24 +142,38 @@ public class EsTest {
 		config.setTestOnBorrow(true);
 		//把资源返回连接池时检查是否有效
 		config.setTestOnReturn(true);
-		/**************ES集群配置*******************/
-		EsConnectConfig esConnectConfig = new EsConnectConfig();
+		/**************ES1集群配置*******************/
+		EsConnectConfig esConnectConfig1 = new EsConnectConfig();
 		//设置集群名称
-		esConnectConfig.setClusterName("bigData-cluster");
+		esConnectConfig1.setClusterName("bigData-cluster");
 		//集群IP数组
-		String [] nodes={"192.169.2.98:9200","192.169.2.188:9200","192.169.2.156:9200"};
-		esConnectConfig.setNodes(nodes);
+		String [] nodes1={"192.169.2.98:9200"};
+		esConnectConfig1.setNodes(nodes1);
 		//设置集群连接协议,默认http
-		esConnectConfig.setScheme(EsConnect.HTTP);
+		esConnectConfig1.setScheme(EsConnect.HTTP);
 		//把连接池配置和ES集群配置加载进池中
-		pool = new EsConnectionPool(config, esConnectConfig);
+		pool1 = new EsConnectionPool(config, esConnectConfig1);
+
+		/**************ES2集群配置*******************/
+		EsConnectConfig esConnectConfig2 = new EsConnectConfig();
+		//设置集群名称
+		esConnectConfig2.setClusterName("bigData-cluster");
+		//集群IP数组
+		String [] nodes2={"192.169.2.184:9200"};
+		esConnectConfig2.setNodes(nodes2);
+		//设置集群连接协议,默认http
+		esConnectConfig2.setScheme(EsConnect.HTTP);
+		//把连接池配置和ES集群配置加载进池中
+		pool2 = new EsConnectionPool(config, esConnectConfig2);
 		/***************如果不使用我的封装处理类可这样获取对象返还对象********************/
+		
 		//获取对象
 		//RestHighLevelClient client = pool.getConnection();
 		//返还对象
 		//pool.returnConnection(client);
 		//设为程序全局可用这个连接池
-		EsPool.ESCLIENT.setPool(pool);
+		EsPool.ESCLIENT.setPool(pool1,"demo1");
+		EsPool.ESCLIENT.setPool(pool2,"demo2");
     }
     public void indexTest(){
 //		/**************索引库设置以及检查创建****************/
@@ -229,24 +251,30 @@ public class EsTest {
     }
     public void queryCountTest() throws Exception{
 		 /***************索引库查询示例1:普通查询****************/	
-    	  EsRequestEntity esRequestEntity = new EsRequestEntity("pb_sa_phone","pb_sa_phone");
+    	 EsRequestEntity esRequestEntity1 = new EsRequestEntity("mt_msgcode","mt_msgcode","demo1");
+    	  EsRequestEntity esRequestEntity2 = new EsRequestEntity("mt_msgcode","mt_msgcode","demo2");
 		  SearchEsHandler search = new SearchEsHandler();
 		  try {
 			 //设置条件
 			 //search.setQueryBuilder(null);
 			 //设置配置
-			 search.builder(esRequestEntity);
+			 search.builder(esRequestEntity1);
 			 List<String> list = new ArrayList<String>();
 			 list.add("8613686875559");
 			 list.add("8618898794524");
 			 list.add("12345");
 			 String [] nodes={"country","fmtype"};
 			 search.fetchSource(nodes, null);
-			 System.out.println(search.searchByIds(list));
+			// System.out.println(search.searchByIds(list));
 			 //根据条件查询总数
-			 logger.info("查询总数:{}",search.count());
+			 System.out.println("查询总数:{}"+search.count());
 			 //获取条件DSL,可直接在Kibana中直接运行
-			 logger.info("总数查询DSL:{}",search.toDSL());
+			 System.out.println("总数查询DSL:{}"+search.toDSL());
+			 search.builder(esRequestEntity2);
+			 //根据条件查询总数
+			 System.out.println("2查询总数:{}"+search.count());
+			 //获取条件DSL,可直接在Kibana中直接运行
+			 System.out.println("2总数查询DSL:{}"+search.toDSL());
 			} catch (Exception e) {
 					throw e;
 			}finally {
@@ -337,31 +365,6 @@ public class EsTest {
 			// TODO: handle exception
 		}finally{
 			aggsearch.close();
-		}
-    }
-    public void updateTest(){
-    	EsRequestEntity esRequestEntity = new EsRequestEntity("demo","demo");
-		/************数据更新*************/
-		UpdateEsHandler update = new UpdateEsHandler();
-		try {
-			 //要更新的内容
-			 List<Map<String,Object>> list = new ArrayList<>();
-			 //更新的数据
-			 Map<String,Object> map = new HashMap<>();
-			 map.put("id",523456);
-			 list.add(map);
-			 //必须需要,否则抛出异常
-			update.setIdFieldName("id");
-			//设置配置
-			update.builder(esRequestEntity);
-			//执行批量更新
-			update.updateBulk(list);
-			//执行单条更新
-			update.updateOne(map);
-		} catch (Exception e) {
-			// TODO: handle exception
-		}finally{
-			update.close();
 		}
     }
     public void deleteTest(){

@@ -18,6 +18,7 @@ public class AppTest {
 //		  String json = "{\"address\":\"address\",\"name\":\"haha\",\"id\":1,\"email\":\"email\"}";
 //			ObjectMapper mapper = new ObjectMapper();
 //			System.out.println(mapper.readValue(json, Map.class));
+		System.out.println(Math.ceil(8/8)-1);
 	}
 }
   

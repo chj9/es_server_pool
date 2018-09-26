@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
@@ -38,9 +39,10 @@ import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.montnets.elasticsearch.client.EsPool;
 import org.montnets.elasticsearch.client.pool.es.EsConnectionPool;
+import org.montnets.elasticsearch.common.enums.Constans;
 import org.montnets.elasticsearch.common.jsonparser.JSONParser;
 import org.montnets.elasticsearch.common.jsonparser.model.JsonObject;
-import org.montnets.elasticsearch.common.util.PoolUtils;
+import org.montnets.elasticsearch.common.util.Utils;
 import org.montnets.elasticsearch.condition.ConditionEs;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
 import org.montnets.elasticsearch.entity.ScrollEntity;
@@ -81,6 +83,7 @@ public class SearchEsHandler implements IBasicHandler{
 	  private String[] excludeFields = Strings.EMPTY_ARRAY;
 	  /*********对象池*******************/
 	  private EsConnectionPool pool = null;
+	  private String poolId = Constans.DEFAULT_POOL_ID;
 	  /**
 	   * 这两个参数是获取版本和解释,官方都是默认true,我这里为了减少返回数据设置默认false,如果需要设置为true,在设置中设置即可
 	   */
@@ -93,7 +96,8 @@ public class SearchEsHandler implements IBasicHandler{
 		this.index=Objects.requireNonNull(esRequestEntity.getIndex(), "index can not null");
 		this.type =Objects.requireNonNull(esRequestEntity.getType(), "type can not null");
 		this.esRequestEntity=esRequestEntity;
-		this.pool=EsPool.ESCLIENT.getPool();
+		this.poolId=esRequestEntity.getPoolId();
+		this.pool=EsPool.ESCLIENT.getPool(poolId);
 		this.rhlClient=pool.getConnection();
 	}
 	/**
@@ -169,7 +173,7 @@ public class SearchEsHandler implements IBasicHandler{
 	    		searchSourceBuilder.size(esRequestEntity.getLimit());
 	    	}
 			//是否需要排序,没有则不需要
-		    if(PoolUtils.isNotEmpty(sortField)&&Objects.nonNull(sortOrder)){
+		    if(Utils.isNotEmpty(sortField)&&Objects.nonNull(sortOrder)){
 				searchSourceBuilder.sort(new FieldSortBuilder(sortField).order(sortOrder));
 			}
 		    //设置过滤字段
@@ -190,7 +194,6 @@ public class SearchEsHandler implements IBasicHandler{
 			 searchRequest.source(searchSourceBuilder); 
 			 SearchResponse searchResponse = rhlClient.search(searchRequest);
 			 SearchHits hits = searchResponse.getHits();
-
 			 totalCount=hits.getTotalHits();
 			 return hits; 
 		 } catch (Exception e) {
@@ -229,7 +232,7 @@ public class SearchEsHandler implements IBasicHandler{
 		try {
 		 String scrollId = scrollEntity.getScrollId();
 		 //首次进入
-		if(PoolUtils.isEmpty(scrollId)){
+		if(Utils.isEmpty(scrollId)){
 			SearchRequest searchRequest = new SearchRequest(index);
 			searchSourceBuilder = new SearchSourceBuilder();
 			searchSourceBuilder.size(esRequestEntity.getLimit()); 
@@ -385,7 +388,7 @@ public class SearchEsHandler implements IBasicHandler{
      * @return 响应不存在的ID
      * @throws Exception 
      */ 
-     public  List<String> unExistsDocByIds(List<String> ids,String idFiled) throws Exception{
+     public  Set<String> unExistsDocByIds(Set<String> ids,String idFiled) throws Exception{
     	return existsIds(ids,idFiled,false);
     }
     /**
@@ -395,10 +398,10 @@ public class SearchEsHandler implements IBasicHandler{
      * @return 响应存在的ID
      * @throws Exception 
      */
-    public  List<String> existsDocByIds(List<String> ids,String idFiled) throws Exception{
+    public  Set<String> existsDocByIds(Set<String> ids,String idFiled) throws Exception{
     	return existsIds(ids,idFiled,true);
     }
-    public  List<String> existsIds(List<String> ids,String idFiled,boolean dataType) throws Exception{
+    public  Set<String> existsIds(Set<String> ids,String idFiled,boolean dataType) throws Exception{
     	if(ids==null||ids.isEmpty()){
     		throw new NullPointerException("id can not null and empty");
     	}
@@ -489,8 +492,8 @@ public class SearchEsHandler implements IBasicHandler{
 	 */
 	@Override
 	public void close() {
-		if(rhlClient!=null){
+		//if(rhlClient!=null){
 			pool.returnConnection(rhlClient);
-		}
+		//}
 	}
 }

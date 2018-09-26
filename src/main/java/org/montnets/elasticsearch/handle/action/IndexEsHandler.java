@@ -10,10 +10,10 @@ import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.montnets.elasticsearch.client.EsPool;
 import org.montnets.elasticsearch.client.pool.es.EsConnectionPool;
+import org.montnets.elasticsearch.common.enums.Constans;
 import org.montnets.elasticsearch.config.EsBasicModelConfig;
 import org.montnets.elasticsearch.entity.EsRequestEntity;
 import org.montnets.elasticsearch.handle.IBasicHandler;
@@ -38,8 +38,10 @@ public class IndexEsHandler implements IBasicHandler{
 	private RestHighLevelClient client;
 	  /*********对象池*******************/
 	  private EsConnectionPool pool = null;
-	private void builder(){
-		this.pool=EsPool.ESCLIENT.getPool();
+	  private String poolId = Constans.DEFAULT_POOL_ID;
+	private void builder(String poolId){
+		this.poolId=poolId;
+		this.pool=EsPool.ESCLIENT.getPool(poolId);
 		this.client=pool.getConnection();
 	}
 	 /**
@@ -116,8 +118,9 @@ public class IndexEsHandler implements IBasicHandler{
 	public String toDSL() {
 		return "not DSL";
 	}
-	public void builder(@Nullable EsRequestEntity esRequestEntity) {
-		builder();
+	public void builder(EsRequestEntity esRequestEntity) {
+		this.poolId = esRequestEntity.getPoolId();
+		builder(poolId);
 	}
 	@Override
 	public void validate() throws NullPointerException {

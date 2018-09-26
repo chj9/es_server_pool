@@ -26,7 +26,10 @@ public class ConditionEs {
 	private  final String AND = "and";
 	private  final String OR = "or";
 	private  final String FILTER = "filter";
-	private final float DEFAULT_BOOST = 1.0f;
+	/**
+	 *权重 默认 1
+	 */
+	private  final float DEFAULT_BOOST = 1.0f;
 	public ConditionEs(){
 		 boolQueryBuilder = QueryBuilders.boolQuery();
 	}
