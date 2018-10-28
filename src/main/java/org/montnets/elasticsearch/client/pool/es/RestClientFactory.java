@@ -71,6 +71,7 @@ public class RestClientFactory {
 	        builder.setMaxRetryTimeoutMillis(MAX_RETRY_TIMEOUT_MILLIS);
 	        setConnectTimeOutConfig();
 	        setMutiConnectConfig();
+	        
 	        restHighLevelClient = new RestHighLevelClient(builder);
 	    }
 	    /**

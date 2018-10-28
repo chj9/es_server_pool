@@ -194,6 +194,21 @@ public class ConditionEs {
 		commandHandler(FILTER,command,field,value,DEFAULT_BOOST);
 		return this;
 	}
+	public ConditionEs and(QueryBuilder queryBuilder) throws IllegalAccessException{
+		Objects.requireNonNull(queryBuilder,"命令不能为空!");
+		boolQueryBuilder.must(queryBuilder);
+		return this;
+	}
+	public ConditionEs filter(QueryBuilder queryBuilder) throws IllegalAccessException{
+		Objects.requireNonNull(queryBuilder,"命令不能为空!");
+		boolQueryBuilder.filter(queryBuilder);
+		return this;
+	}
+	public ConditionEs or(QueryBuilder queryBuilder) throws IllegalAccessException{
+		Objects.requireNonNull(queryBuilder,"命令不能为空!");
+		boolQueryBuilder.should(queryBuilder);
+		return this;
+	}
 	/**
 	 * 命令处理
 	 * @param logic 逻辑
@@ -237,7 +252,8 @@ public class ConditionEs {
 				    }else if(FILTER.equals(logic)){
 				    	boolQueryBuilder.filter(QueryBuilders.rangeQuery(field).lt(value).boost(boost));
 				    }else if(OR.equals(logic)){
-				    	boolQueryBuilder.should(QueryBuilders.rangeQuery(field).lt(value).boost(boost));
+				    	//boolQueryBuilder.should(QueryBuilders.rangeQuery(field).lt(value).boost(boost));
+				    	boolQueryBuilder.filter(QueryBuilders.boolQuery().should(QueryBuilders.rangeQuery(field).lt(value).boost(boost)));
 				    }
 				    break;
 			case lte: 
@@ -246,7 +262,8 @@ public class ConditionEs {
 				    }else if(FILTER.equals(logic)){
 				    	boolQueryBuilder.filter(QueryBuilders.rangeQuery(field).lte(value).boost(boost));
 				    }else if(OR.equals(logic)){
-				    	boolQueryBuilder.should(QueryBuilders.rangeQuery(field).lte(value).boost(boost));
+				    	//boolQueryBuilder.should(QueryBuilders.rangeQuery(field).lte(value).boost(boost));
+				    	boolQueryBuilder.filter(QueryBuilders.boolQuery().should(QueryBuilders.rangeQuery(field).lte(value).boost(boost)));
 				    }
 					break;
 			case equal:
@@ -255,7 +272,8 @@ public class ConditionEs {
 				    }else if(FILTER.equals(logic)){
 				    	boolQueryBuilder.filter(QueryBuilders.termQuery(field,value).boost(boost));
 				    }else if(OR.equals(logic)){
-				    	boolQueryBuilder.should(QueryBuilders.termQuery(field,value).boost(boost));
+				    	//boolQueryBuilder.should(QueryBuilders.termQuery(field,value).boost(boost));
+				    	boolQueryBuilder.filter(QueryBuilders.boolQuery().should(QueryBuilders.termQuery(field,value).boost(boost)));
 				    }
 					break;
 			case unequal:
@@ -272,7 +290,8 @@ public class ConditionEs {
 				    }else if(FILTER.equals(logic)){
 				    	boolQueryBuilder.filter(QueryBuilders.existsQuery(field).boost(boost));
 				    }else if(OR.equals(logic)){
-						 boolQueryBuilder.should(QueryBuilders.existsQuery(field).boost(boost));
+						 //boolQueryBuilder.should(QueryBuilders.existsQuery(field).boost(boost));
+						 boolQueryBuilder.filter(QueryBuilders.boolQuery().should(QueryBuilders.existsQuery(field).boost(boost)));
 				    }
 					break;
 			case unexist:
@@ -293,6 +312,13 @@ public class ConditionEs {
 		return queryBuilder;
 	}
 	/**
+	 * 可单独设置
+	 * @param queryBuilder
+	 */
+	public void setQueryBuilder(QueryBuilder queryBuilder) {
+		this.queryBuilder = queryBuilder;
+	}
+	/**
 	 * 打印生成的DSL语句
 	 * @return
 	 */
@@ -304,5 +330,13 @@ public class ConditionEs {
 		}
 		searchSourceBuilder.query(toResult());
 		return searchSourceBuilder.toString();
+	}
+	public static void main(String[] args) throws IllegalAccessException {
+		ConditionEs con = new ConditionEs();
+		//con.or(ConditionType., field)
+		con.and(ConditionType.gt, "phone","0").and(ConditionType.lt,"rmsupdtm", "2018-10-11 09:15:02");
+		con.or(ConditionType.equal, "9","0").or(ConditionType.equal, "10","0");
+		
+		System.out.println(con.toDSL());
 	}
 }

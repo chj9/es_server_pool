@@ -4,7 +4,7 @@
 
   <groupId>org.montnets.elasticsearch</groupId>
   <artifactId>es-serve-pool</artifactId>
-  <version>1.1.0</version>
+  <version>1.1.12</version>
   <packaging>jar</packaging>
 
   <name>es-serve-pool</name>
@@ -12,9 +12,9 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    	<es.version>6.4.1</es.version>
+    	<es.version>6.3.2</es.version>
     	<httpasyncclient>4.1.4</httpasyncclient>
-    	<log4j>2.9.1</log4j>
+    	<log4j>2.11.1</log4j>
     	<commons-pool>2.6.0</commons-pool>
 	    <maven.compiler.source>1.8</maven.compiler.source>
 	    <maven.compiler.target>1.8</maven.compiler.target>
@@ -36,12 +36,12 @@
 	    <artifactId>jackson-databind</artifactId>
 	    <version>${jackson}</version>
 	</dependency>
-	 
+	 -->
 		<dependency>
 		    <groupId>org.apache.logging.log4j</groupId>
 		    <artifactId>log4j-core</artifactId>
 		    <version>${log4j}</version>
-		</dependency>-->
+		</dependency>
 		<dependency>
 		    <groupId>org.apache.commons</groupId>
 		    <artifactId>commons-pool2</artifactId>
@@ -51,7 +51,7 @@
     <build>  
   		<defaultGoal>compile</defaultGoal>
 		<sourceDirectory>src</sourceDirectory>
-		<finalName>es-serve-pool-1.1.0</finalName>
+		<finalName>es-serve-pool-1.1.12</finalName>
     <plugins>  
         <plugin>  
                 <groupId>org.apache.maven.plugins</groupId>  

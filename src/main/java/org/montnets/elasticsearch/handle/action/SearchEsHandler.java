@@ -115,6 +115,10 @@ public class SearchEsHandler implements IBasicHandler{
 		 this.queryBuilder = queryBuilder.toResult();
 		 return this;
 	 }
+	 public SearchEsHandler setQueryBuilder(final QueryBuilder queryBuilder) {
+		 this.queryBuilder = queryBuilder;
+		 return this;
+	 }
 	 /**
 	  * 设置排序(可选)
 	  * @param field 排序的参数
@@ -303,7 +307,19 @@ public class SearchEsHandler implements IBasicHandler{
 	 * 批量ID查询,类型SQL中的in查询
 	 * @throws Exception 
 	 */
-	public List<Map<String, Object>> searchByIds(List<String> ids) throws Exception{
+	public List<Map<String, Object>> searchByIds(Set<String> ids) throws Exception{
+		return executeSearchByIds(ids,null);
+	}
+	/**
+	 * 批量ID查询,类型SQL中的in查询,把ID放在响应的数据中
+	 * @param ids ID列表
+	 * @param idField id在响应数据中的字段名,方便获取
+	 * @throws Exception 
+	 */
+	public List<Map<String, Object>> searchByIds(Set<String> ids,String idField) throws Exception{
+			return executeSearchByIds(ids,idField);
+	}
+	private List<Map<String, Object>> executeSearchByIds(Set<String> ids,String idField) throws Exception{
 	   	if(ids==null||ids.isEmpty()){
     		throw new NullPointerException("ids can not null and empty");
     	}
@@ -331,7 +347,11 @@ public class SearchEsHandler implements IBasicHandler{
  					continue;
  				}
  				if(resultGet.isExists()){
- 					dataList.add(resultGet.getSourceAsMap());
+ 					 Map<String, Object> reMap = resultGet.getSourceAsMap();
+ 					  if(Utils.isNotEmpty(idField)){
+ 						 reMap.put(idField,resultGet.getId());
+ 					  }
+ 					  dataList.add(reMap);
  				}else {
  				}
  			}

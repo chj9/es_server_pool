@@ -70,8 +70,9 @@ public class EsTest {
 		 	//System.out.println(client2.info(EsConnect.EMPTY_HEADERS).getNodeName());
 		 //	client1.close();
 		 	//client2.close();
-		 	queryCountTest();
-		 	
+		 	//queryCountTest();
+		 	indexTest();
+		 	insertTest();
 		 	System.out.println(45161);
 //		 	for(int i=0;i<100;i++){
 //		 		TimeUnit.SECONDS.sleep(2);
@@ -114,15 +115,12 @@ public class EsTest {
     }
     public void init(){
     	/**************连接池设置*******************/
-    	EsConnectionPool pool1 =EsPool.ESCLIENT.getPool("demo1");
-    	EsConnectionPool pool2 =EsPool.ESCLIENT.getPool("demo2");
+    	EsConnectionPool pool1 =EsPool.ESCLIENT.getPool();
     	//如果池已经初始化,先关闭再初始化.
     	if(pool1!=null){
     				pool1.close();
     	}
-    	if(pool2!=null){
-			pool2.close();
-    	}
+
 		PoolConfig config = new PoolConfig();
 		//池中最大连接数 默认 8
 		config.setMaxTotal(8);
@@ -164,7 +162,7 @@ public class EsTest {
 		//设置集群连接协议,默认http
 		esConnectConfig2.setScheme(EsConnect.HTTP);
 		//把连接池配置和ES集群配置加载进池中
-		pool2 = new EsConnectionPool(config, esConnectConfig2);
+		//pool2 = new EsConnectionPool(config, esConnectConfig2);
 		/***************如果不使用我的封装处理类可这样获取对象返还对象********************/
 		
 		//获取对象
@@ -172,8 +170,8 @@ public class EsTest {
 		//返还对象
 		//pool.returnConnection(client);
 		//设为程序全局可用这个连接池
-		EsPool.ESCLIENT.setPool(pool1,"demo1");
-		EsPool.ESCLIENT.setPool(pool2,"demo2");
+		EsPool.ESCLIENT.setPool(pool1);
+	//	EsPool.ESCLIENT.setPool(pool2,"demo2");
     }
     public void indexTest(){
 //		/**************索引库设置以及检查创建****************/
@@ -201,6 +199,20 @@ public class EsTest {
     public void insertTest(){
 		 /*************索引库插入示例*******************/
 		 EsRequestEntity esRequestEntity = new EsRequestEntity("demo","demo");
+		
+		 
+//		 UpdateEsHandler update = new UpdateEsHandler();
+//		 try {
+//			 Map<String,Object> map = new HashMap<String,Object>();
+//			// update.setIdFieldName("phone");
+//			 update.builder(esRequestEntity);
+//			 update.updateOne(map);
+//		} catch (Exception e) {
+//			// TODO: handle exception
+//		}finally{
+//			update.close();
+//		}
+		
 		 InsertEsHandler insert = new InsertEsHandler();
 		 try {
 			 //存在更新不存在插入   true:开启  false：关闭(默认)
@@ -437,7 +449,7 @@ public class EsTest {
 		
     }
     public static void main(String[] args) throws Exception {
-    	System.out.println(123);
+    	//System.out.println(123);
 		new EsTest().EsConnectPoolDemo();
 	}
     

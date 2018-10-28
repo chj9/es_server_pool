@@ -77,6 +77,10 @@ public class DeleteEsHandler implements IBasicHandler{
 			this.queryBuilder = queryBuilder.toResult();
 			return this;
 	 }
+	 public DeleteEsHandler setQueryBuilder(QueryBuilder queryBuilder) {
+			this.queryBuilder = queryBuilder;
+			return this;
+	 }
 	/**
 	 * 根据ID删除数据
 	* @author chenhongjie 

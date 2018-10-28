@@ -89,6 +89,10 @@ public class AggregationEsHandler implements IBasicHandler{
 			this.queryBuilder = queryBuilder.toResult();
 			return this;
 	 }
+	 public AggregationEsHandler setQueryBuilder(QueryBuilder queryBuilder) {
+			this.queryBuilder = queryBuilder;
+			return this;
+	 }
 	/**
 	* 普通聚合查询,总数字段默认 count
 	* @return
