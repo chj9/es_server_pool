@@ -248,6 +248,7 @@ public class SearchEsHandler implements IBasicHandler{
 			 if(Objects.nonNull(script)){
 				 searchSourceBuilder.scriptField(scriptName, script);
 			 }
+			 
 			 //测试用
 			// searchSourceBuilder.profile(true);
 			 //不需要解释
