@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NStringEntity;
 import org.apache.http.util.EntityUtils;
@@ -196,6 +197,7 @@ public class SearchEsHandler implements IBasicHandler{
 		    	 searchSourceBuilder.query(queryBuilder); 
 		     }
 			 searchRequest.source(searchSourceBuilder); 
+			 
 			 SearchResponse searchResponse = rhlClient.search(searchRequest);
 			 SearchHits hits = searchResponse.getHits();
 			 totalCount=hits.getTotalHits();
@@ -396,7 +398,9 @@ public class SearchEsHandler implements IBasicHandler{
  			RestClient restClient = rhlClient.getLowLevelClient();
  			String endPoint = "/" + index + "/" + type +"/"+idvalue.trim();
  	        Response response = restClient.performRequest("HEAD",endPoint,Collections.<String, String>emptyMap());
- 	        isExists ="OK".equals(response.getStatusLine().getReasonPhrase());
+ 	        if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK){
+ 	        	isExists = true;
+ 	        }
  		} catch (IOException e) {
  			isExists=false;
  		}
